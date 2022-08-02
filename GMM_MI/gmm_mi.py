@@ -10,6 +10,8 @@ from sklearn.utils import check_random_state
 from sklearn import cluster
 from sklearn.model_selection import KFold
 
+import warnings
+
 def log_pdf(y, x, model):
     y = np.array(y)
     x = np.array(x)
