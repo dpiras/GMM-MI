@@ -1,8 +1,9 @@
 import numpy as np
 from sklearn.utils import check_random_state
+from sklearn.mixture._gaussian_mixture import _estimate_gaussian_covariances_full
 from scipy.special import gamma
 
-def initialise_parameters(X, random_state, n_components=1, s=None, reg_covar=1e-6, init_type='random'):
+def initialize_parameters(X, random_state, n_components=1, s=None, reg_covar=1e-6, init_type='random'):
     """Initialize the model parameters.
     Parameters
     ----------
