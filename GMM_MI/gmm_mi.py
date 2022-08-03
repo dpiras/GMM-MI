@@ -3,13 +3,11 @@ from scipy.stats import multivariate_normal
 from scipy.special import logsumexp
 from scipy import linalg
 import scipy.integrate as integrate
-
 from sklearn.mixture import GaussianMixture as GMM
 from sklearn.mixture._gaussian_mixture import _estimate_log_gaussian_prob, _compute_precision_cholesky, _estimate_gaussian_covariances_full
 from sklearn.utils import check_random_state
 from sklearn import cluster
 from sklearn.model_selection import KFold
-
 import warnings
 from sklearn.exceptions import ConvergenceWarning
 from utils.initializations import initialize_parameters
@@ -21,8 +19,10 @@ def log_pdf(y, x, model):
     X = np.concatenate((y.reshape(1, 1), x.reshape(1, 1))).T
     return model.score_samples(X)
 
+
 def pdf(y, x):
     return np.exp(log_pdf(y, x))
+
 
 def entropy_2d_integrand(y, x, model):
     """
@@ -31,6 +31,7 @@ def entropy_2d_integrand(y, x, model):
     logp = log_pdf(y, x, model)
     p = np.exp(logp)
     return p*logp
+
 
 def entropy_1d_integrand(x, model, index):
     """
@@ -44,6 +45,7 @@ def entropy_1d_integrand(x, model, index):
     logp_1d = gmm_marginal.score_samples(x.reshape(-1, 1))
     p = np.exp(logp_1d)
     return p*logp_1d
+
 
 class GMM(GMM):
     """
