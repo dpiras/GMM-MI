@@ -11,6 +11,7 @@ from sklearn import cluster
 from sklearn.model_selection import KFold
 
 import warnings
+from sklearn.exceptions import ConvergenceWarning
 from utils.initializations import initialize_parameters
 
 
@@ -485,7 +486,6 @@ def perform_bootstrap(X, n_bootstrap, best_components,
                     tol=tol, max_iter=max_iter, 
                     random_state=random_state, weights_init=w_init, 
                     means_init=m_init, precisions_init=p_init).fit(X_bs)
-
         current_MI_estimate = gmm.estimate_MI_MC(MC_samples=MC_samples)
         MI_estimates[i] = current_MI_estimate
     MI_mean = np.mean(MI_estimates)

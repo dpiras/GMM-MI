@@ -46,3 +46,25 @@ def plot_contours(gmm, ax=None, color='salmon', ls='--', label='True', scatter='
     ax.tick_params(axis='both', which='major', labelsize=20, size=6)
     ax.set_xlabel('X1', fontsize=30)
     ax.set_ylabel('X2', fontsize=30)
+
+def plot_MI_values(MI_estimates, bins=20, alpha=1, legendsize=25, color='salmon', lw=3, title=None):
+    fig, (ax) = plt.subplots(1, 1, figsize=(15, 10))
+    trials = len(MI_estimates)
+
+    # calculate significance
+    mean_error = np.std(MI_estimates)/np.sqrt(trials)
+    significance = np.mean(MI_estimates) / mean_error
+    
+    # and plot
+    ax.hist(MI_estimates.flatten(), alpha=alpha, bins=bins, 
+             label=f'MI values, {significance:.1f}$\sigma$,\n{np.mean(MI_estimates):.4f}$\pm${mean_error:.4f}', 
+             color=color, histtype='step', lw=lw)
+
+    ax.axvline(0, ls='--', lw=lw, c='k')
+    ax.tick_params(axis='both', which='major', labelsize=20, size=6)
+    ax.legend(fontsize=legendsize, frameon=False)
+    ax.set_xlabel('MI [nats]', fontsize=30)
+    ax.set_xlabel('Counts', fontsize=30)
+
+    # change title accordingly
+    ax.set_title(title, fontsize=30)
