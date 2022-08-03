@@ -511,7 +511,7 @@ def GMM_MI(X, n_folds=5, n_inits=5,
             if n_components != fixed_components_number:
                 continue
                 
-        current_results_dict = cross_validation(X, n_components=n_components, n_folds=n_folds, 
+        current_results_dict = cross_validation(X, n_components=n_components, n_folds=n_folds, max_iter=max_iter,
                                        init_type=init_type, n_inits=n_inits, tol=tol, reg_covar=reg_covar)
         results_dict[n_components] = current_results_dict
 

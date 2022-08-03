@@ -68,3 +68,35 @@ def plot_MI_values(MI_estimates, bins=20, alpha=1, legendsize=25, color='salmon'
 
     # change title accordingly
     ax.set_title(title, fontsize=30)
+
+def plot_loss_curves(loss_curves, n_inits, n_folds):
+    fig, axes = plt.subplots(n_inits, n_folds, figsize=(20, 30), sharex=True, sharey=True)
+
+    for i in range(n_inits*n_folds):
+        ax = axes.flatten()[i]
+        current_train_loss = loss_curves[2*i]
+        current_val_loss = loss_curves[2*i+1]
+        x_v = np.arange(len(current_train_loss))
+        if i == 0:
+            label1 = 'Train'
+            label2 = 'Valid'
+        else:
+            label1 = '' 
+            label2 = ''
+        ax.plot(x_v, current_train_loss, label=label1, lw=3, ls='-', color='grey')
+        ax.plot(x_v, current_val_loss, label=label2, lw=3, ls='-', color='salmon')
+        if i == 0:
+            ax.legend(fontsize=18, frameon=False, loc='lower right')
+
+        # you can play with these to adjust the viz
+        #ax.set_ylim((-2.48, -2.22))
+        #ax.set_xlim((0, 149))
+
+        ax.tick_params(axis='both', which='major', labelsize=20, size=6)
+        if i >= n_inits*n_folds - n_folds:
+            ax.set_xlabel('Iteration', fontsize=20)
+
+        if i % n_folds == 0:
+            ax.set_ylabel('logL', fontsize=20)
+
+    fig.subplots_adjust(wspace=0.0, hspace=0.0)
