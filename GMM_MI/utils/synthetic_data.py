@@ -2,9 +2,10 @@ import numpy as np
 from gmm_mi import GMM
 random_state = 13
 
-# We define a few different synthetic models, with different components,
+# We define a few different synthetic GMM models, with different components,
 # which are used to test GMM-MI. The random state is fixed.
-# The suffix 'p' indicates a 
+# The suffix 'p' indicates a model with different means only.
+
 D1 = GMM(n_components = 1,
             weights_init = np.array([1.0]),
             means_init = np.array([[-1, 1]]),
