@@ -12,6 +12,10 @@ import warnings
 from sklearn.exceptions import ConvergenceWarning
 from utils.initializations import initialize_parameters
 
+# add requirement file
+# add installation file
+# add more tests
+
 
 def log_pdf(y, x, model):
     y = np.array(y)

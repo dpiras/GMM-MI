@@ -344,7 +344,7 @@ def plot_loss_curve(loss_curves, index, ax):
     Parameters
     ----------
     loss_curves : list of lists
-        All loss curves, as returned by GMM_MI. Every pair of elements represents the train 
+        All loss curves, as returned by GMM-MI. Every pair of elements represents the train 
         and validation loss, respectively, for a particular fold and initialization.
     index : int
         The panel index where to draw the loss curves.
@@ -364,17 +364,17 @@ def plot_loss_curve(loss_curves, index, ax):
     
 def plot_loss_curves(loss_curves, n_inits, n_folds, figsize=(20, 30), 
                      legendsize=18, frameon=False, loc='lower right'):
-    """Plot all loss curves for the k-fold cross-validation in GMM_MI. The legend is placed only
-    in the first panel. Every row corresponds to a different initialisation, and every column
+    """Plot all loss curves for the k-fold cross-validation in GMM-MI. The legend is placed only
+    in the first panel. Every row corresponds to a different initialization, and every column
     corresponds to a different fold.
     
     Parameters
     ----------
     loss_curves : list of lists
-        All loss curves, as returned by GMM_MI. Every pair of elements represents the train 
+        All loss curves, as returned by GMM-MI. Every pair of elements represents the train 
         and validation loss, respectively, for a particular fold and initialization.
     n_inits : int
-        The number of initialisations in the k-fold cross-validation.
+        The number of initializations in the k-fold cross-validation.
     n_folds : int
         The number of folds in the k-fold cross-validation (k = n_folds).
     figsize : tuple of two integers, default=(20,30)
