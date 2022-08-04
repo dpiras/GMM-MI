@@ -6,7 +6,6 @@ import scipy.integrate as integrate
 from sklearn.mixture import GaussianMixture as GMM
 from sklearn.mixture._gaussian_mixture import _estimate_log_gaussian_prob, _compute_precision_cholesky, _estimate_gaussian_covariances_full
 from sklearn.utils import check_random_state
-from sklearn import cluster
 from sklearn.model_selection import KFold
 import warnings
 from sklearn.exceptions import ConvergenceWarning
@@ -431,8 +430,9 @@ def cross_validation(X, n_components=1, n_folds=5, n_inits=5, max_iter=10000,
     for r in range(n_inits):
 
         # initialise with different seed r
-        w_init, m_init, c_init, p_init = initialize_parameters(X, r, n_components=n_components, init_type=init_type)
+        w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=r, n_components=n_components, init_type=init_type)
 
+        
         # perform k-fold CV
         for k_idx, (train_indices, valid_indices) in enumerate(kf.split(X)):
             X_training = X[train_indices]
@@ -494,11 +494,10 @@ def perform_bootstrap(X, n_bootstrap, best_components,
     MI_std = np.sqrt(np.var(MI_estimates, ddof=1))
     return MI_mean, MI_std
              
-def GMM_MI(X, n_folds=5, n_inits=5, 
-                 init_type='random', reg_covar=1e-6, tol=1e-6, max_iter=10000,
-                 bootstrap=False, n_bootstrap=100, MC_samples=1e5, 
-                 components_range=100, select_c='valid', patience=1,
-                 fixed_components='True', fixed_components_number=1): 
+def GMM_MI(X, n_folds=5, n_inits=5, init_type='random', reg_covar=1e-6, 
+           tol=1e-6, max_iter=10000, bootstrap=False, n_bootstrap=100, 
+           MC_samples=1e5, components_range=100, select_c='valid', patience=1,
+           fixed_components='True', fixed_components_number=1): 
     """
     TODO
     """
@@ -506,6 +505,8 @@ def GMM_MI(X, n_folds=5, n_inits=5,
     best_metric = -np.inf
     patience_counter = 0
     results_dict = {}
+    
+    # check that select_c is one of the 3 methods
     
     for n_components in range(1, components_range+1):
         if fixed_components:
@@ -520,7 +521,9 @@ def GMM_MI(X, n_folds=5, n_inits=5,
         if not converged:
             # if we want to select the number of components based on AIC or BIC, we need to change the metric
             if select_c == 'aic' or select_c == 'bic':
-                w_init, m_init, c_init, p_init = initialize_parameters(X, current_seed, n_components=n_components, init_type=init_type)
+                current_seed = current_results_dict['best_seed']
+                w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=current_seed, 
+                                                                       n_components=n_components, init_type=init_type)
                 gmm = GMM(n_components=n_components, reg_covar=reg_covar, 
                         tol=tol, max_iter=max_iter, 
                         random_state=current_seed, weights_init=w_init, 
@@ -539,6 +542,7 @@ def GMM_MI(X, n_folds=5, n_inits=5,
                 print(n_components, best_metric)
             else:
                 patience_counter += 1
+                # might need to add a message here...
                 if patience_counter >= patience:
                     converged = True
                 
