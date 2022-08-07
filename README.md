@@ -3,7 +3,7 @@ Welcome to GMM-MI! This documentation is a work in progress.
 
 Current missing features include:
 - more test notebooks, including all results from the paper.
-- the installation instructions.
+- the installation instructions (including an example calculation).
 
 ## Current state
 
