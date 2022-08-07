@@ -239,7 +239,7 @@ def kmeans_sklearn_initialization(X, n_components, random_state, reg_covar=0):
     return weights, means, covariances
 
 
-def initialize_parameters(X, random_state=None, n_components=1, init_type='random_sklearn', scale=None):
+def initialize_parameters(X, random_state=None, n_components=1, init_type='random_sklearn', scale=None, reg_covar=0):
     """Initialize the Guassian mixture model (GMM) parameters (weights, means, covariances and precisions).
     
     Parameters
@@ -268,7 +268,8 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     scale : float, default=None
         If set, sets component variances in the 'random' and 'minmax' cases. 
         If scale is not given, it will be set such that the volume of all components completely fills the space covered by data.
-        
+    TODO: add possibility to add reg_covar to covariances
+    
     Returns
     ----------
     weights : array, shape (n_components, 1)

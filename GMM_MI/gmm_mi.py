@@ -419,25 +419,26 @@ class GMM(GMM):
 
 def single_cross_validation(X, kf, validation_scores, 
                             all_ws, all_ms, all_ps, all_loss_curves,
-                            val_scores_seeds, n_components=1, n_folds=5, n_inits=5, 
-                            max_iter=10000, init_type='random', reg_covar=1e-6, tol=1e-6):    
+                            val_scores_seeds, n_components, n_folds, n_inits, 
+                            max_iter, init_type, reg_covar, tol):    
     
     for r in range(n_inits):
         # initialise with different seed r
         w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=r, 
-                                                               n_components=n_components, init_type=init_type)        
+                                                               n_components=n_components, init_type=init_type)
+        
         # perform k-fold CV
         for k_idx, (train_indices, valid_indices) in enumerate(kf.split(X)):
             X_training = X[train_indices]
             X_validation = X[valid_indices]
             
-            gmm = single_fit(X, n_components=n_components, reg_covar=reg_covar, tol=tol, 
+            gmm = single_fit(X_training, n_components=n_components, reg_covar=reg_covar, tol=tol, 
                        max_iter=max_iter, random_state=r, w_init=w_init, m_init=m_init, 
                        p_init=p_init, val_set=X_validation)
 
             # we take the mean logL per sample, since folds might have slightly different sizes
             val_score = gmm.score_samples(X_validation).mean()
-
+            
             # save current scores, as well as parameters
             validation_scores[r, k_idx] = np.copy(val_score)
             all_ws[r, k_idx] = np.copy(gmm.weights_)
@@ -454,40 +455,36 @@ def single_cross_validation(X, kf, validation_scores,
     
     
 def cross_validation(X, n_components=1, n_folds=5, n_inits=5, max_iter=10000, 
-                 init_type='random', reg_covar=1e-6, tol=1e-6):
+                 init_type='random_sklearn', reg_covar=1e-6, tol=1e-6):
     """
     Docstring TODO
     """
     # fix number of components to true model
     # create empty arrays for multiple initialisations
-    val_scores_seeds = np.zeros(n_inits)
-    
+    val_scores_seeds = np.zeros(n_inits)    
     # these are one for each init and each fold; we'll average over these at the end of the CV
-    validation_scores = np.zeros((n_inits, n_folds))
-    
+    validation_scores = np.zeros((n_inits, n_folds))    
     # prepare the folds; note the splitting will be the same for all initialisations
     # the random seed is fixed here, but results should be independent of the exact split
     kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-
     # also create emoty arrays for final GMM parameters
     all_ws = np.zeros((n_inits, n_folds, n_components))
     all_ms = np.zeros((n_inits, n_folds, n_components, 2))
     all_ps = np.zeros((n_inits, n_folds, n_components, 2, 2))    
     all_loss_curves = []
-
-    val_scores_seeds, validation_scores, all_ws, all_ms, all_ps, all_loss_curves = single_cross_validation(X=X, kf=kf, 
-                                                                                                                   validation_scores=validation_scores,                                                                                                
-                            all_ws=all_ws, all_ms=all_ms, all_ps=all_ps, all_loss_curves=all_loss_curves,
-                            val_scores_seeds=val_scores_seeds, n_components=n_components, n_folds=n_folds, n_inits=n_inits, 
-                                                                                                           max_iter=max_iter, 
-                 init_type=init_type, reg_covar=reg_covar, tol=tol)  
+    val_scores_seeds, validation_scores, all_ws, all_ms, all_ps, all_loss_curves = single_cross_validation(X=X, kf=kf,                                                                                                          validation_scores=validation_scores, 
+                                                                                     all_ws=all_ws, all_ms=all_ms, 
+                                                                                     all_ps=all_ps, all_loss_curves=all_loss_curves,
+                                                                                     val_scores_seeds=val_scores_seeds,
+                                                                                     n_components=n_components, n_folds=n_folds, 
+                                                                                     n_inits=n_inits, max_iter=max_iter,
+                                                                                     init_type=init_type, reg_covar=reg_covar, tol=tol)  
     
     # select seed with highest val score across the different inits
     best_seed = np.argmax(val_scores_seeds)
     best_val_score = np.max(val_scores_seeds)
     # within the best fold, select the model with the highest validation logL
-    best_fold_in_init = np.argmax(validation_scores[best_seed])
-    
+    best_fold_in_init = np.argmax(validation_scores[best_seed])    
     results_dict = {'best_seed': best_seed, 'best_fold_in_init': best_fold_in_init, 
                    'best_val_score': best_val_score, 'all_loss_curves': all_loss_curves, 
                    'all_ws': all_ws, 'all_ms': all_ms, 'all_ps': all_ps}
@@ -585,39 +582,49 @@ def perform_bootstrap(X, n_bootstrap, n_components,
 
               
     
-def GMM_MI(X, n_folds=3, n_inits=5, init_type='random', reg_covar=1e-6, 
+def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15, 
            tol=1e-6, max_iter=10000, max_components=100, select_c='valid', 
-           patience=1, bootstrap=True, n_bootstrap=100, fixed_components='False', 
+           patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
            fixed_components_number=1, MI_method='MC', MC_samples=1e5): 
     """
-    GMM-MI: calculate mutual information (MI) on 2D data with an error bar, using Gaussian mixture models (GMMs).
+    Calculate mutual information (MI) distributio on 2D data, using Gaussian mixture models (GMMs).
     The first part performs density estimation of the data using GMMs and k-fold cross-validation.
     The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
     The MI uncertainty is calculated through bootstrap.
 
     Parameters
     ----------
-    X : array-like of shape  (n_samples, n_features)
-        The data based on which the scale is calculated. 
-    n_components : int
-        Number of GMM components.
+    X : array-like of shape (n_samples, 2)
+        Samples from the joint distribution of the two variables whose MI is calculated.
+    n_folds : int, default=3
+    
+    n_inits : int, default=5
+    
+    init_type='random_sklearn', reg_covar=1e-15, 
+           tol=1e-6, max_iter=10000, max_components=100, select_c='valid', 
+           patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
+           fixed_components_number=1, MI_method='MC', MC_samples=1e5
         
     Returns
     ----------
-    scale : float
-        Scale prefactor, to be used to initialize the GMM.
+    MI_mean : float
+        Mean of the MI distribution.
+    MI_std : float
+        Standard deviation of the MI distribution.
+    loss_curves : list of lists
+        Loss curves of the models trained during cross-validation; only used for debugging.
     """
     converged = False
     best_metric = -np.inf
     patience_counter = 0
     results_dict = {}
     
-    # check that select_c is one of the 3 methods
+    assert select_c == 'valid' or select_c == 'aic' or select_c == 'bic', f"select_c must be either 'valid', 'aic' or 'bic, found {select_c}"
     
     for n_components in range(1, max_components+1):
         if fixed_components:
             converged = True
-            if n_components != fixed_components_number:
+            if n_components < fixed_components_number:
                 continue
                 
         current_results_dict = cross_validation(X, n_components=n_components, n_folds=n_folds, max_iter=max_iter,
