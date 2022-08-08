@@ -252,7 +252,7 @@ def add_regularization(covariances, reg_covar, X, n_components):
         The regularized covariance matrices of the GMM model.  
     """
     _, n_features = X.shape
-    regularization = np.tile(np.eye(n_features)*reg_covar, n_components)
+    regularization = np.repeat((reg_covar*np.eye(n_features))[np.newaxis, :, :], n_components, axis=0)
     covariances += regularization   
     return covariances
 
@@ -323,9 +323,11 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     else:
         raise ValueError(f"Initialisation type not known. It should be one of "
                          f"'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
-    
+    print(covariances)
     covariances = add_regularization(covariances=covariances, reg_covar=reg_covar, 
                                      X=X, n_components=n_components)
+    print(covariances)
+
     # all matrices can be inverted at once
     precisions = np.linalg.inv(covariances)
     return weights, means, covariances, precisions
