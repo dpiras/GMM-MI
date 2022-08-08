@@ -597,13 +597,46 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
     X : array-like of shape (n_samples, 2)
         Samples from the joint distribution of the two variables whose MI is calculated.
     n_folds : int, default=3
-    
+        Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
     n_inits : int, default=5
-    
-    init_type='random_sklearn', reg_covar=1e-15, 
-           tol=1e-6, max_iter=10000, max_components=100, select_c='valid', 
-           patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
-           fixed_components_number=1, MI_method='MC', MC_samples=1e5
+        Number of initializations used to find the best initialization parameters.
+    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+        The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
+        See utils.initializations for more details.
+    reg_covar : float, default=1e-15
+        The constant term added to the diagoal of the covariance matrices to avoid singularities.
+    tol : float, default=1e-6
+        The log-likelihood threshold on each GMM fit used to choose when to stop training.
+    max_iter : int, default=10000
+        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
+        so it is set to a high value.    
+    max_components : int, default=100
+        Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.   
+    select_c : {'valid', 'aic', 'bic'}, default='valid'
+        Method used to select the optimal number of GMM components to perform density estimation.
+        Must be one of:
+            'valid': stop adding components when the validation log-likelihood stops increasing.
+            'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing
+            'bic': same as 'aic' but with the Bayesian information criterion (BIC).
+    patience : int, default=1, 
+        Number of extra components to "wait" until convergence is declared. 
+        Same concept as patience when training a neural network.
+    bootstrap : bool, default=True, 
+        Whether to perform bootstrap or not to get the uncertainty on MI. 
+        If False, only a single value of MI is returned.
+    n_bootstrap : int, default=100 
+        Number of bootstrap realisations to consider to obtain the MI uncertainty.
+    fixed_components : bool, default=False 
+        Fix the number of GMM components to use for density estimation.
+        For debugging purposes, or when you are sure of how many components to use.
+    fixed_components_number : int, default=1
+        The number of GMM components to use. Only used if fixed_components == True.
+    MI_method : {'MC', 'quad'}, default='MC' 
+        Method to calculate the MI integral. Must be one of:
+            'MC': use Monte Carlo integration with MC_samples samples.
+            'quad': use quadrature integration, as implemented in scipy, with default parameters.
+    MC_samples : int, default=1e5
+        Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         
     Returns
     ----------
@@ -612,7 +645,7 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
     MI_std : float
         Standard deviation of the MI distribution.
     loss_curves : list of lists
-        Loss curves of the models trained during cross-validation; only used for debugging.
+        Loss curves of the models trained during cross-validation; currently used for debugging.
     """
     converged = False
     best_metric = -np.inf
