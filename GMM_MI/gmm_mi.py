@@ -5,82 +5,180 @@ from sklearn.model_selection import KFold
 import warnings
 
 
-def single_cross_validation(X, kf, validation_scores, 
-                            all_ws, all_ms, all_ps, all_loss_curves,
-                            val_scores_seeds, n_components, n_folds, n_inits, 
-                            max_iter, init_type, reg_covar, tol):    
+def _run_cross_validation(X, kf, val_scores, all_ws, all_ms, all_ps, all_lcurves, n_components, 
+                          n_folds=3, n_inits=5, init_type='random_sklearn', 
+                          reg_covar=1e-15, tol=1e-6, max_iter=10000):        
+    """
+    Actually run the cross-validation (CV) procedure, filling all arrays and lists with results.
     
-    for r in range(n_inits):
-        # initialise with different seed r
-        w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=r, 
-                                                               n_components=n_components, init_type=init_type)
-        
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, 2)
+        Data on which CV is performed.
+    kf : KFold class instance
+        The k-fold cross-validator object, as obtained from sklearn.    
+    val_scores : array-like of shape (n_inits, n_folds)
+        Contains all validation log-likelihood values ("scores"). Will be filled in this function.
+    all_ws : array-like of shape (n_inits, n_folds, n_components)
+        Contains all final GMM weights. Will be filled in this function.
+    all_ms : array-like of shape (n_inits, n_folds, n_components, 2)
+        Contains all final GMM means. Will be filled in this function.    
+    all_ps : array-like of shape (n_inits, n_folds, n_components, 2, 2)
+        Contains all final GMM precision matrices. Will be filled in this function.   
+    all_lcurves : list of lists
+        Contains all loss curves. Will be filled in this function.
+    n_components : int
+        Number of GMM components currently being fitted.
+    n_folds : int, default=3
+        Number of folds.
+    n_inits : int, default=5
+        Number of initializations.
+    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+        The method used to initialize the weights, the means, the covariances and the precisions in each fit.
+        See utils.initializations for more details.
+    reg_covar : float, default=1e-15
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
+    tol : float, default=1e-6
+        The log-likelihood threshold on each GMM fit used to choose when to stop training.
+    max_iter : int, default=10000
+        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
+        so it is set to a high value.    
+
+    Returns
+    ----------
+    val_scores : array-like of shape (n_inits, n_folds)
+        Filled array with all validation log-likelihood values ("scores").
+    all_ws : array-like of shape (n_inits, n_folds, n_components)
+        Filled array with all final GMM weights
+    all_ms : array-like of shape (n_inits, n_folds, n_components, 2)
+        Filled array with all final GMM means.    
+    all_ps : array-like of shape (n_inits, n_folds, n_components, 2, 2)
+        Filled array with all final GMM precision matrices. 
+    all_lcurves : list of lists
+        Filled list with all loss curves.   
+    """
+    for random_state in range(n_inits):
+        # initialise with different seed random_state
+        w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=random_state, n_components=n_components, 
+                                                               init_type=init_type)       
         # perform k-fold CV
-        for k_idx, (train_indices, valid_indices) in enumerate(kf.split(X)):
+        for k_id, (train_indices, valid_indices) in enumerate(kf.split(X)):
             X_training = X[train_indices]
-            X_validation = X[valid_indices]
-            
-            gmm = single_fit(X_training, n_components=n_components, reg_covar=reg_covar, tol=tol, 
-                       max_iter=max_iter, random_state=r, w_init=w_init, m_init=m_init, 
+            X_validation = X[valid_indices]            
+            gmm = single_fit(X=X_training, n_components=n_components, reg_covar=reg_covar, tol=tol, 
+                       max_iter=max_iter, random_state=random_state, w_init=w_init, m_init=m_init, 
                        p_init=p_init, val_set=X_validation)
-
             # we take the mean logL per sample, since folds might have slightly different sizes
-            val_score = gmm.score_samples(X_validation).mean()
-            
+            val_score = gmm.score_samples(X_validation).mean()            
             # save current scores, as well as parameters
-            validation_scores[r, k_idx] = np.copy(val_score)
-            all_ws[r, k_idx] = np.copy(gmm.weights_)
-            all_ms[r, k_idx] = np.copy(gmm.means_)
-            all_ps[r, k_idx] = np.copy(gmm.precisions_)
+            val_scores[random_state, k_id] = np.copy(val_score)
+            all_ws[random_state, k_id] = np.copy(gmm.weights_)
+            all_ms[random_state, k_id] = np.copy(gmm.means_)
+            all_ps[random_state, k_id] = np.copy(gmm.precisions_)
             # save the loss functions as well
-            all_loss_curves.append(np.copy(gmm.train_loss))
-            all_loss_curves.append(np.copy(gmm.val_loss))
+            all_lcurves.append(np.copy(gmm.train_loss))
+            all_lcurves.append(np.copy(gmm.val_loss))
+ 
+    return val_scores, all_ws, all_ms, all_ps, all_lcurves
+    
+    
+def cross_validation(X, n_components, n_folds=3, n_inits=5, init_type='random_sklearn', 
+                     reg_covar=1e-15, tol=1e-6, max_iter=10000):
+    """
+    Perform cross-validation (CV) to select the best GMM initialization parameters, 
+    and thus avoid local minima in the density estimation.
 
-        # take mean of current seed's val scores
-        val_scores_seeds[r] = np.mean(validation_scores[r])
-    
-    return val_scores_seeds, validation_scores, all_ws, all_ms, all_ps, all_loss_curves
-    
-    
-def cross_validation(X, n_components=1, n_folds=5, n_inits=5, max_iter=10000, 
-                 init_type='random_sklearn', reg_covar=1e-6, tol=1e-6):
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, 2)
+        Data on which CV is performed.
+    n_components : int
+        Number of GMM components currently being fitted.
+    n_folds : int, default=3
+        Number of folds.
+    n_inits : int, default=5
+        Number of initializations.
+    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+        The method used to initialize the weights, the means, the covariances and the precisions in each fit.
+        See utils.initializations for more details.
+    reg_covar : float, default=1e-15
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
+    tol : float, default=1e-6
+        The log-likelihood threshold on each GMM fit used to choose when to stop training.
+    max_iter : int, default=10000
+        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
+        so it is set to a high value.    
+
+    Returns
+    ----------
+    results_dict : dict
+        A dictionary containing all results from the CV procedure:
+        'best_seed': the initialization seed that led to the highest mean log-likelihood across folds.
+        'best_val_score': the corresponding value of the highest mean log-likelihood.
+        'best_fold_in_init':  the index of the best fold within the best initialization.
+        'all_lcurves': list of list with the training and validation curves.
+        'all_ws': all weights of the fitted GMM models.
+        'all_ms': all means of the fitted GMM models.
+        'all_ps': all precisions of the fitted GMM models.
     """
-    Docstring TODO
-    """
-    # fix number of components to true model
-    # create empty arrays for multiple initialisations
-    val_scores_seeds = np.zeros(n_inits)    
-    # these are one for each init and each fold; we'll average over these at the end of the CV
-    validation_scores = np.zeros((n_inits, n_folds))    
-    # prepare the folds; note the splitting will be the same for all initialisations
-    # the random seed is fixed here, but results should be independent of the exact split
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-    # also create emoty arrays for final GMM parameters
+    # create empty arrays to store all results
+    val_scores = np.zeros((n_inits, n_folds))    
+    # create empty arrays for final GMM parameters, and loss curves
     all_ws = np.zeros((n_inits, n_folds, n_components))
     all_ms = np.zeros((n_inits, n_folds, n_components, 2))
     all_ps = np.zeros((n_inits, n_folds, n_components, 2, 2))    
-    all_loss_curves = []
-    val_scores_seeds, validation_scores, all_ws, all_ms, all_ps, all_loss_curves = single_cross_validation(X=X, kf=kf,                                                                                                          validation_scores=validation_scores, 
-                                                                                     all_ws=all_ws, all_ms=all_ms, 
-                                                                                     all_ps=all_ps, all_loss_curves=all_loss_curves,
-                                                                                     val_scores_seeds=val_scores_seeds,
-                                                                                     n_components=n_components, n_folds=n_folds, 
-                                                                                     n_inits=n_inits, max_iter=max_iter,
-                                                                                     init_type=init_type, reg_covar=reg_covar, tol=tol)  
-    
+    all_lcurves = []
+    # random seed is fixed here, but results should be independent of the exact split
+    kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)    
+    val_scores, all_ws, all_ms, all_ps, all_lcurves = _run_cross_validation(X=X, kf=kf, val_scores=val_scores, 
+                                                                           all_ws=all_ws, all_ms=all_ms, all_ps=all_ps,
+                                                                           all_lcurves=all_lcurves, 
+                                                                           n_components=n_components, n_folds=n_folds, 
+                                                                           n_inits=n_inits, max_iter=max_iter,
+                                                                           init_type=init_type, reg_covar=reg_covar, tol=tol)      
     # select seed with highest val score across the different inits
-    best_seed = np.argmax(val_scores_seeds)
-    best_val_score = np.max(val_scores_seeds)
-    # within the best fold, select the model with the highest validation logL
-    best_fold_in_init = np.argmax(validation_scores[best_seed])    
-    results_dict = {'best_seed': best_seed, 'best_fold_in_init': best_fold_in_init, 
-                   'best_val_score': best_val_score, 'all_loss_curves': all_loss_curves, 
-                   'all_ws': all_ws, 'all_ms': all_ms, 'all_ps': all_ps}
+    avg_val_scores = np.mean(val_scores, axis=1)
+    best_seed = np.argmax(avg_val_scores)
+    best_val_score = np.max(avg_val_scores)
+    # within the best fold, also select the model with the highest validation logL
+    best_fold_in_init = np.argmax(val_scores[best_seed])    
+    results_dict = {'best_seed': best_seed, 'best_val_score': best_val_score, 
+                    'best_fold_in_init': best_fold_in_init, 'all_lcurves': all_lcurves, 
+                    'all_ws': all_ws, 'all_ms': all_ms, 'all_ps': all_ps}
     return results_dict        
     
 
 def single_fit(X, n_components, reg_covar, tol, max_iter, 
                 random_state, w_init, m_init, p_init, val_set=None):
+    """
+    Perform a single fit of a GMM on some data.
+
+    Parameters
+    ----------
+    X : array-like of shape (n_samples, 2)
+        Data on which CV is performed.
+    n_components : int
+        Number of GMM components currently being fitted.
+    n_folds : int, default=3
+        Number of folds.
+    n_inits : int, default=5
+        Number of initializations.
+    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+        The method used to initialize the weights, the means, the covariances and the precisions in each fit.
+        See utils.initializations for more details.
+    reg_covar : float, default=1e-15
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
+    tol : float, default=1e-6
+        The log-likelihood threshold on each GMM fit used to choose when to stop training.
+    max_iter : int, default=10000
+        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
+        so it is set to a high value.    
+
+    Returns
+    ----------
+    gmm : instance of GMM class
+        The fitted GMM model.
+    """
     gmm = GMM(n_components=n_components, reg_covar=reg_covar, 
                 tol=tol, max_iter=max_iter, 
                 random_state=random_state, weights_init=w_init, 
@@ -126,7 +224,7 @@ def find_best_parameters(n_components, fixed_components, patience, results_dict)
         best_components -= patience
     # first we need to retrieve the best results
     print(f'Convergence reached at {best_components} components') 
-    loss_curves = results_dict[best_components]['all_loss_curves']
+    loss_curves = results_dict[best_components]['all_lcurves']
     best_seed = results_dict[best_components]['best_seed']
     best_fold_in_init = results_dict[best_components]['best_fold_in_init']            
     all_ws = results_dict[best_components]['all_ws']
@@ -175,7 +273,7 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
            patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
            fixed_components_number=1, MI_method='MC', MC_samples=1e5): 
     """
-    Calculate mutual information (MI) distributio on 2D data, using Gaussian mixture models (GMMs).
+    Calculate mutual information (MI) distribution on 2D data, using Gaussian mixture models (GMMs).
     The first part performs density estimation of the data using GMMs and k-fold cross-validation.
     The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
     The MI uncertainty is calculated through bootstrap.
@@ -192,7 +290,7 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
-        The constant term added to the diagoal of the covariance matrices to avoid singularities.
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
     tol : float, default=1e-6
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
@@ -244,14 +342,13 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
     
     for n_components in range(1, max_components+1):
         if fixed_components:
-            converged = True
             if n_components < fixed_components_number:
-                continue
-                
-        current_results_dict = cross_validation(X, n_components=n_components, n_folds=n_folds, max_iter=max_iter,
+                continue  
+            else:
+                converged = True
+        current_results_dict = cross_validation(X=X, n_components=n_components, n_folds=n_folds, max_iter=max_iter,
                                        init_type=init_type, n_inits=n_inits, tol=tol, reg_covar=reg_covar)
-        results_dict[n_components] = current_results_dict
-        
+        results_dict[n_components] = current_results_dict        
         if not converged:
             metric = select_best_metric(X, current_results_dict=current_results_dict, select_c=select_c,
                                         random_state=current_seed, n_components=n_components, 
