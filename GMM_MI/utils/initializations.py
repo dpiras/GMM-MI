@@ -134,7 +134,7 @@ def kmeans_initialization(X, n_components, random_state):
     return weights, means, covariances
     
     
-def calculate_parameters_from_responsibilities(responsibilities, X, reg_covar=0):
+def calculate_parameters_from_responsibilities(responsibilities, X):
     """Calculate GMM parameters given the responsibilities of each sample. 
     The responsibilities are the probabilities that each sample belongs to each component.
     Weights, means and covariances are calculated as in an M-step.
@@ -146,8 +146,6 @@ def calculate_parameters_from_responsibilities(responsibilities, X, reg_covar=0)
         The responsibilities.   
     X : array-like of shape  (n_samples, n_features)
         The data based on which the GMM initialization is calculated.  
-    reg_covar : float, default=0
-        Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
         
     Returns
     ----------
@@ -163,12 +161,12 @@ def calculate_parameters_from_responsibilities(responsibilities, X, reg_covar=0)
     nk = responsibilities.sum(axis=0) + 10 * np.finfo(responsibilities.dtype).eps
     weights = nk/n_samples
     means = np.dot(responsibilities.T, X) / nk[:, np.newaxis]
-    # the regularization added to the diagonal of the covariance matrices (to prevent singular covariance matrices);
-    covariances = _estimate_gaussian_covariances_full(responsibilities, X, nk, means, reg_covar=reg_covar)        
+    # we don't add any regularization  to the diagonal of the covariance matrices here
+    covariances = _estimate_gaussian_covariances_full(responsibilities, X, nk, means, reg_covar=0)        
     return weights, means, covariances
 
 
-def random_sklearn_initialization(X, n_components, random_state, reg_covar=0):
+def random_sklearn_initialization(X, n_components, random_state):
     """Calculate GMM parameters by assigning the responsibilities randomly.
     This is the default initialization, and is taken from sklearn.
     See initialize_parameters for more details.
@@ -181,8 +179,6 @@ def random_sklearn_initialization(X, n_components, random_state, reg_covar=0):
         Number of GMM components.
     random_state : RandomState instance
         Used to sample the means. 
-    reg_covar : float, default=0
-        Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
         
     Returns
     ----------
@@ -196,11 +192,11 @@ def random_sklearn_initialization(X, n_components, random_state, reg_covar=0):
     n_samples, _ = X.shape
     responsibilities = random_state.rand(n_samples, n_components)
     responsibilities /= responsibilities.sum(axis=1)[:, np.newaxis]
-    weights, means, covariances = calculate_parameters_from_responsibilities(responsibilities, X, reg_covar=reg_covar)    
+    weights, means, covariances = calculate_parameters_from_responsibilities(responsibilities, X)    
     return weights, means, covariances
 
 
-def kmeans_sklearn_initialization(X, n_components, random_state, reg_covar=0):
+def kmeans_sklearn_initialization(X, n_components, random_state):
     """Calculate GMM parameters by assigning the responsibilities via k-means.
     Note that in this case each point is assigned with probability 1 to a single cluster.
     Taken from sklearn. See initialize_parameters for more details.
@@ -213,8 +209,6 @@ def kmeans_sklearn_initialization(X, n_components, random_state, reg_covar=0):
         Number of GMM components.
     random_state : RandomState instance
         Used to sample the means. 
-    reg_covar : float, default=0
-        Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
         
     Returns
     ----------
@@ -235,7 +229,7 @@ def kmeans_sklearn_initialization(X, n_components, random_state, reg_covar=0):
         .labels_
     )
     responsibilities[np.arange(n_samples), label] = 1
-    weights, means, covariances = calculate_parameters_from_responsibilities(responsibilities, X, reg_covar=reg_covar)    
+    weights, means, covariances = calculate_parameters_from_responsibilities(responsibilities, X)    
     return weights, means, covariances
 
 
@@ -268,8 +262,9 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     scale : float, default=None
         If set, sets component variances in the 'random' and 'minmax' cases. 
         If scale is not given, it will be set such that the volume of all components completely fills the space covered by data.
-    TODO: add possibility to add reg_covar to covariances
-    
+    reg_covar : float, default=0
+        Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
+        
     Returns
     ----------
     weights : array, shape (n_components, 1)
@@ -300,6 +295,9 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         raise ValueError(f"Initialisation type not known. It should be one of "
                          f"'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
 
+    
+    # TODO: add regularisation to covariances    
+    
     # all matrices can be inverted at once
     precisions = np.linalg.inv(covariances)
     return weights, means, covariances, precisions
