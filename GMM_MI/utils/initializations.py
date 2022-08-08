@@ -323,10 +323,9 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     else:
         raise ValueError(f"Initialisation type not known. It should be one of "
                          f"'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
-    print(covariances)
+
     covariances = add_regularization(covariances=covariances, reg_covar=reg_covar, 
                                      X=X, n_components=n_components)
-    print(covariances)
 
     # all matrices can be inverted at once
     precisions = np.linalg.inv(covariances)
