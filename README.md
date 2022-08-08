@@ -3,6 +3,7 @@ Welcome to GMM-MI! This documentation is a work in progress.
 
 Current missing features include:
 - full documentation and testing of the main module gmm_mi.py
+- might be worth turning GMM-MI into a class, rather than a function?
 - more test notebooks, including all results from the paper
 - the installation instructions (including an example calculation of MI).
 
