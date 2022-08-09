@@ -62,26 +62,79 @@ def entropy_1d_integrand(x, model, index):
 
 class GMM(GMM):
     """
-    Custom GMM class based on the sklearn GMM class.
-    This allows to work with a GMM with fixed parameters, without fitting it.
-    It also allows to estimate MI with a certain number of MC samples, or with quadrature method.
-    The different initialisation types are dealt with separately.
+    Custom Gaussian mixture model (GMM) class built on the sklearn GaussianMixture class. 
+    Allows to work with a GMM with fixed parameters, without fitting them. 
+    It also allows to estimate MI with a certain number of MC samples, 
+    or with quadrature method (when in 2D). 
+    The different initialization types are dealt with separately, so init_params is not used explicitly.
+    We recommend calculating the initial parameters with the provided utilities, and then providing them.
+    Most methods and attributes are the same as GaussianMixture; only differences are highlighted here.
+    
+    Parameters
+    ----------
+    weights_init : array-like of shape (n_components, ), default=np.array([1.])
+        The user-provided initial weights.
+        If it is None, a single weight is initialized as 1.
+    means_init : array-like of shape (n_components, n_features), default=np.array([0.])
+        The user-provided initial means,
+        If it is None, a single mean is initialized at 0.
+    precisions_init : array-like, default=np.array([1.]).reshape(-1, 1, 1)
+        The user-provided initial precisions (inverse of the covariance
+        matrices).
+        If it is None, a single precision is initialized as 1.
+    covariances_init : array-like, default=None
+        The user-provided initial covariances (inverse of the precision
+        matrices).
+        If it is None, covariances are initialized as inverse of initial precision matrices.
+    
+    Attributes
+    ----------
+    weights_ : array-like of shape (n_components,)
+        The weights of each mixture components. If not fit, set to the initial values.
+    means_ : array-like of shape (n_components, n_features)
+        The mean of each mixture component. If not fit, set to the initial values.
+    covariances_ : array-like
+        The covariance of each mixture component. If not fit, set to the initial values.
+        The shape depends on `covariance_type`::
+            (n_components,)                        if 'spherical',
+            (n_features, n_features)               if 'tied',
+            (n_components, n_features)             if 'diag',
+            (n_components, n_features, n_features) if 'full'
+    precisions_ : array-like
+        The precision matrices for each component in the mixture. If not fit, set to the initial values.
+        A precision matrix is the inverse of a covariance matrix. A covariance matrix is
+        symmetric positive definite so the mixture of Gaussian can be
+        equivalently parameterized by the precision matrices. Storing the
+        precision matrices instead of the covariance matrices makes it more
+        efficient to compute the log-likelihood of new samples at test time.
+        The shape depends on `covariance_type`::
+            (n_components,)                        if 'spherical',
+            (n_features, n_features)               if 'tied',
+            (n_components, n_features)             if 'diag',
+            (n_components, n_features, n_features) if 'full'
+    precisions_cholesky_ : array-like
+        The Cholesky decomposition of the precision matrices of each mixture component. 
+    train_loss : list
+        Contains the log-likelihood on training data as a function of iteration.
+        Only created and filled if a validation set is provided when fitting the model.
+    val_loss : list
+        Contains the log-likelihood on validation data as a function of iteration.
+        Only created and filled if a validation set is provided when fitting the model.
     """
     def __init__(self,
                  n_components=1,
                  covariance_type="full",
-                 tol=1e-5,
+                 tol=1e-3,
                  reg_covar=1e-6,
                  max_iter=100,
                  n_init=1,
-                 init_params="random",
                  random_state=None,
                  warm_start=False,
                  verbose=0,
                  verbose_interval=10,
-                 weights_init=None,
-                 means_init=None,
-                 precisions_init=None,
+                 weights_init=np.array([1.]),
+                 means_init=np.array([0.]),
+                 precisions_init=np.array([1.]).reshape(-1, 1, 1),
                  covariances_init=None
                  ):
         super(GMM, self).__init__(n_components=n_components,
@@ -90,7 +143,6 @@ class GMM(GMM):
                  reg_covar=reg_covar,
                  max_iter=max_iter,
                  n_init=n_init,
-                 init_params=init_params,
                  random_state=random_state,
                  warm_start=warm_start,
                  verbose=verbose,
@@ -111,44 +163,48 @@ class GMM(GMM):
                 self.covariances_, self.covariance_type
             )
 
-
     def score_samples(self, X):
-        """Compute the log-likelihood of each sample.
+        """Compute the log-likelihood of each sample. Removed check_is_fitted function.
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
-            List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
+            List of n_features-dimensional data points. Each row corresponds to a single data point.
+        
         Returns
         -------
         log_prob : array, shape (n_samples,)
             Log-likelihood of each sample in `X` under the current model.
         """
-
         return logsumexp(self._estimate_weighted_log_prob(X), axis=1)
 
     def predict(self, X):
         """Predict the labels for the data samples in X using trained model.
+        Removed check_is_fitted function.
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             List of n_features-dimensional data points. Each row
             corresponds to a single data point.
+            
         Returns
         -------
         labels : array, shape (n_samples,)
             Component labels.
         """
-
         return self._estimate_weighted_log_prob(X).argmax(axis=1)
 
     def predict_proba(self, X):
         """Evaluate the components' density for each sample.
+        Removed check_is_fitted function.
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             List of n_features-dimensional data points. Each row
             corresponds to a single data point.
+            
         Returns
         -------
         resp : array, shape (n_samples, n_components)
@@ -158,11 +214,14 @@ class GMM(GMM):
         return np.exp(log_resp)
 
     def sample(self, n_samples=1):
-        """Generate random samples from the fitted Gaussian distribution.
+        """Generate random samples from the Gaussian mixture model.
+        Removed check_is_fitted function.
+
         Parameters
         ----------
         n_samples : int, default=1
             Number of samples to generate.
+        
         Returns
         -------
         X : array, shape (n_samples, n_features)
@@ -170,7 +229,6 @@ class GMM(GMM):
         y : array, shape (nsamples,)
             Component labels.
         """
-
         if n_samples < 1:
             raise ValueError(
                 "Invalid value for 'n_samples': %d . The sampling requires at "
@@ -179,6 +237,7 @@ class GMM(GMM):
 
         _, n_features = self.means_.shape
         rng = check_random_state(self.random_state)
+        # how many samples for each component?
         n_samples_comp = rng.multinomial(n_samples, self.weights_)
 
         if self.covariance_type == "full":
@@ -206,34 +265,11 @@ class GMM(GMM):
                     )
                 ]
             )
-
+        # this simply expands the information of how many samples per components
         y = np.concatenate(
             [np.full(sample, j, dtype=int) for j, sample in enumerate(n_samples_comp)]
         )
-
         return (X, y)
-
-    def score_samples_marginal(self, X, index=0):
-        """Compute the log-likelihood of each sample for the marginal model, indexed by either 0 (x) or 1 (y).
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
-        index: integer
-            Either 0 (marginal x) or 1 (marginal y).
-        Returns
-        -------
-        log_prob : array, shape (n_samples,)
-            Log-likelihood of each sample in `X` under the current model.
-        """
-
-        oned_cholesky = np.sqrt(1/self.covariances_[:, index, index]).reshape(-1, 1, 1)
-        marginal_logprob = _estimate_log_gaussian_prob(
-            X, self.means_[:, index].reshape(-1, 1), oned_cholesky, self.covariance_type
-        )
-
-        return logsumexp(np.log(self.weights_) + marginal_logprob, axis=1)
 
     def fit(self, X, y=None, val_set=None):
         """TODO
@@ -360,7 +396,29 @@ class GMM(GMM):
         _, log_resp = self._e_step(X)
 
         return log_resp.argmax(axis=1)
-        
+
+    def score_samples_marginal(self, X, index=0):
+        """Compute the log-likelihood of each sample for the marginal model, indexed by either 0 (x) or 1 (y).
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            List of n_features-dimensional data points. Each row
+            corresponds to a single data point.
+        index: integer
+            Either 0 (marginal x) or 1 (marginal y).
+        Returns
+        -------
+        log_prob : array, shape (n_samples,)
+            Log-likelihood of each sample in `X` under the current model.
+        """
+
+        oned_cholesky = np.sqrt(1/self.covariances_[:, index, index]).reshape(-1, 1, 1)
+        marginal_logprob = _estimate_log_gaussian_prob(
+            X, self.means_[:, index].reshape(-1, 1), oned_cholesky, self.covariance_type
+        )
+
+        return logsumexp(np.log(self.weights_) + marginal_logprob, axis=1)
+
     def estimate_MI_MC(self, MC_samples=1e3):
         """
         Compute the mutual information (MI) associated with a particular GMM model, using MC integration
@@ -385,6 +443,7 @@ class GMM(GMM):
         marginal_y = self.score_samples_marginal(points[:, 1:], index=1)
 
         MI = np.mean(joint - marginal_x - marginal_y)
+        self.MI = MI
         return MI
 
     def estimate_MI_quad(self, tol_int=1.49e-8, limit=np.inf):
@@ -403,7 +462,6 @@ class GMM(GMM):
         """
         gmm = GMM(n_components=self.n_components, weights_init=self.weights_, 
                      means_init=self.means_, covariances_init=self.covariances_)
-        
         entropy_2d = integrate.dblquad(entropy_2d_integrand, -limit, limit, 
                                       lambda x: -limit, lambda x: limit, 
                                       args=[gmm], epsabs=tol_int, epsrel=tol_int)[0]
@@ -411,6 +469,6 @@ class GMM(GMM):
                                       args=(gmm, 0), epsabs=tol_int, epsrel=tol_int)[0]
         entropy_1d_y = integrate.quad(entropy_1d_integrand, -limit, limit, 
                                       args=(gmm, 1), epsabs=tol_int, epsrel=tol_int)[0]
-
         MI = entropy_2d - entropy_1d_x - entropy_1d_y
+        self.MI = MI
         return MI
