@@ -78,7 +78,6 @@ class GMM(GMM):
                  tol=1e-3,
                  reg_covar=1e-6,
                  max_iter=100,
-                 n_init=1,
                  random_state=None,
                  warm_start=False,
                  verbose=0,
@@ -93,7 +92,6 @@ class GMM(GMM):
                  tol=tol,
                  reg_covar=reg_covar,
                  max_iter=max_iter,
-                 n_init=n_init,
                  random_state=random_state,
                  warm_start=warm_start,
                  verbose=verbose,
@@ -223,23 +221,21 @@ class GMM(GMM):
         return (X, y)
 
     def fit(self, X, y=None, val_set=None):
-        """TODO
-        Estimate model parameters with the EM algorithm.
-        The method fits the model ``n_init`` times and sets the parameters with
-        which the model has the largest likelihood or lower bound. Within each
-        trial, the method iterates between E-step and M-step for ``max_iter``
-        times until the change of likelihood or lower bound is less than
-        ``tol``, otherwise, a ``ConvergenceWarning`` is raised.
-        If ``warm_start`` is ``True``, then ``n_init`` is ignored and a single
-        initialization is performed upon the first call. Upon consecutive
-        calls, training starts where it left off.
+        """Estimate model parameters with the EM algorithm.
+        Unlike the sklearn class, we fit only once and deal with the multiple initialisations elsewhere.
+        We add the possibility of recording the log-likelihood on the validation set, if provided.
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
+            corresponds to a single data point. Training set.
         y : Ignored
             Not used, present for API consistency by convention.
+        val_set : array-like of shape (n_samples, n_features)
+            List of n_features-dimensional data points. Each row
+            corresponds to a single data point. Validation set.
+            
         Returns
         -------
         self : object
@@ -249,23 +245,27 @@ class GMM(GMM):
         return self
     
     def fit_predict(self, X, y=None, val_set=None):
-        """TODO
-        Estimate model parameters using X and predict the labels for X.
-        The method fits the model n_init times and sets the parameters with
-        which the model has the largest likelihood or lower bound. Within each
+        """Estimate model parameters using X and predict the labels for X.
+        The method fits the model once times and sets the parameters with
+        which the model has the largest likelihood. Within each
         trial, the method iterates between E-step and M-step for `max_iter`
         times until the change of likelihood or lower bound is less than
         `tol`, otherwise, a :class:`~sklearn.exceptions.ConvergenceWarning` is
-        raised. After fitting, it predicts the most probable label for the
-        input data points.
-        .. versionadded:: 0.20
+        raised.
+        Unlike the sklearn class, we fit only once and deal with the multiple initialisations elsewhere.
+        We add the possibility of recording the log-likelihood on the validation set, if provided.
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
             List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
+            corresponds to a single data point. Training set.
         y : Ignored
             Not used, present for API consistency by convention.
+        val_set : array-like of shape (n_samples, n_features)
+            List of n_features-dimensional data points. Each row
+            corresponds to a single data point. Validation set.
+            
         Returns
         -------
         labels : array, shape (n_samples,)
@@ -280,30 +280,24 @@ class GMM(GMM):
             )
         self._check_initial_parameters(X)
 
-        # if we enable warm_start, we will have a unique initialisation
-        do_init = not (self.warm_start and hasattr(self, "converged_"))
-        n_init = self.n_init if do_init else 1
-
+        do_init = True
+        n_init = 1
         max_lower_bound = -np.inf
         self.converged_ = False
-
         random_state = check_random_state(self.random_state)
 
         n_samples, _ = X.shape
         for init in range(n_init):
             self._print_verbose_msg_init_beg(init)
-
             if do_init:
                 self._initialize_parameters(X, random_state)
-
+            
             lower_bound = -np.inf if do_init else self.lower_bound_
             if val_set is not None:
                 self.train_loss, self.val_loss = [], []
                 
             for n_iter in range(1, self.max_iter + 1):
-
                 prev_lower_bound = lower_bound
-
                 log_prob_norm, log_resp = self._e_step(X)
                 self._m_step(X, log_resp)
                 lower_bound = self._compute_lower_bound(log_resp, log_prob_norm)
@@ -345,11 +339,12 @@ class GMM(GMM):
         # fit_predict(X) are always consistent with fit(X).predict(X)
         # for any value of max_iter and tol (and any random_state).
         _, log_resp = self._e_step(X)
-
         return log_resp.argmax(axis=1)
 
     def score_samples_marginal(self, X, index=0):
-        """Compute the log-likelihood of each sample for the marginal model, indexed by either 0 (x) or 1 (y).
+        """Compute the log-likelihood of each sample for the marginal model, 
+        indexed by either 0 (x) or 1 (y).
+        
         Parameters
         ----------
         X : array-like of shape (n_samples, n_features)
@@ -357,60 +352,61 @@ class GMM(GMM):
             corresponds to a single data point.
         index: integer
             Either 0 (marginal x) or 1 (marginal y).
+        
         Returns
         -------
         log_prob : array, shape (n_samples,)
-            Log-likelihood of each sample in `X` under the current model.
+            Log-likelihood of each sample in X under the marginal model.
         """
-
+        # in 1-D the Cholesky decomposition is simply the inverse sqrt of the variance
         oned_cholesky = np.sqrt(1/self.covariances_[:, index, index]).reshape(-1, 1, 1)
         marginal_logprob = _estimate_log_gaussian_prob(
             X, self.means_[:, index].reshape(-1, 1), oned_cholesky, self.covariance_type
         )
-
         return logsumexp(np.log(self.weights_) + marginal_logprob, axis=1)
 
-    def estimate_MI_MC(self, MC_samples=1e3):
-        """
-        Compute the mutual information (MI) associated with a particular GMM model, using MC integration
+    def estimate_MI_MC(self, MC_samples=1e5):
+        """Compute the mutual information (MI) associated with a particular GMM model, 
+        using MC integration.
+        
         Parameters
         ----------
-        MC_samples : integer
-            Number of Monte Carlo samples to perform numerical integration of the MI integral.
-        Returns
-        ----------
-        MI : integer
-            The value of mutual information.
-        -------
-        """
-        # sample MC samples
-        points, clusters = self.sample(MC_samples)
+        MC_samples : integer, default=1e5
+            Number of Monte Carlo (MC) samples to perform numerical integration of the MI integral.
         
-        # we first evaluate the log-likelihood for the joint probability
+        Returns
+        -------
+        MI : float
+            The value of mutual information.
+        """
+        points, _ = self.sample(MC_samples)       
+        # evaluate the log-likelihood for the joint probability
         joint = self.score_samples(points)
-
-        # we then evaluate the marginals; index=0 corresponds to x, index=y corresponds to y
+        # and the marginals; index=0 corresponds to x, index=y corresponds to y
         marginal_x = self.score_samples_marginal(points[:, :1], index=0)
         marginal_y = self.score_samples_marginal(points[:, 1:], index=1)
-
         MI = np.mean(joint - marginal_x - marginal_y)
         self.MI = MI
         return MI
 
     def estimate_MI_quad(self, tol_int=1.49e-8, limit=np.inf):
-        """
-        TO DO:
-        Compute the mutual information (MI) associated with a particular GMM model, using quadrature integration.
+        """Compute the mutual information (MI) associated with a particular GMM model, 
+        using quadrature integration.
+        
         Parameters
         ----------
-        MC_samples : integer
-            Number of Monte Carlo samples to perform numerical integration of the MI integral.
+        tol_int : float, default=1.49e-8
+            Integral tolerance; the default value is the one form scipy. 
+        limit : float, default=np.inf
+            The extrema of the integral to calculate. Usually the whole plane, so defaults to inf.
+            Integral goes from -limit to +limit.
+        
         Returns
-        ----------
-        MI : integer
-            The value of mutual information.
         -------
+        MI : float
+            The value of mutual information.
         """
+        # we create a GMM object to pass to the integral functions
         gmm = GMM(n_components=self.n_components, weights_init=self.weights_, 
                      means_init=self.means_, covariances_init=self.covariances_)
         entropy_2d = integrate.dblquad(entropy_2d_integrand, -limit, limit, 
@@ -424,20 +420,24 @@ class GMM(GMM):
         self.MI = MI
         return MI
     
-def log_pdf(y, x, model):
-    """Calculate scale prefactor ('s') for the 'random' and 'minmax' initializations.
     
+def log_pdf(y, x, model):
+    """Log-likelihood in 2D for a given model
+    (typically a Gaussian mixture model, GMM).
+        
     Parameters
     ----------
-    X : array-like of shape  (n_samples, n_features)
-        The data based on which the scale is calculated. 
-    n_components : int
-        Number of GMM components.
-        
+    y : float
+        The y variable.
+    x : float, 
+        The x variable.
+    model : instance of class with score_samples method
+        The model whose log-likelihood we calculate; typically a GMM.
+    
     Returns
-    ----------
-    scale : float
-        Scale prefactor, to be used to initialize the GMM.
+    -------
+    integrand : float
+        The value of the integrand.
     """
     y = np.array(y)
     x = np.array(x)
@@ -445,30 +445,56 @@ def log_pdf(y, x, model):
     return model.score_samples(X)
 
 
-def pdf(y, x):
-    return np.exp(log_pdf(y, x))
-
-
 def entropy_2d_integrand(y, x, model):
-    """
-    TODO
+    """Integrand function of 2D entropy for a given model
+    (typically a Gaussian mixture model, GMM).
+        
+    Parameters
+    ----------
+    y : float
+        The y variable.
+    x : float, 
+        The x variable.
+    model : instance of class with score_samples method
+        The model whose entropy we calculate; typically a GMM.
+    
+    Returns
+    -------
+    integrand : float
+        The value of the integrand.
     """
     logp = log_pdf(y, x, model)
     p = np.exp(logp)
-    return p*logp
+    integrand = p*logp
+    return integrand
 
 
 def entropy_1d_integrand(x, model, index):
+    """Integrand function of 1D entropy for a given model
+    (typically a Gaussian mixture model, GMM).
+        
+    Parameters
+    ----------
+    x : float, 
+        The x variable.
+    model : instance of class with score_samples method
+        The model whose entropy we calculate; typically a GMM.
+    index : int
+        The index used to calculate entropy, either 0 (x) or 1 (y).
+    
+    Returns
+    -------
+    integrand : float
+        The value of the integrand.
     """
-    TODO
-    """
-    # add check that index is either 0 or 1
+    assert index == 0 or index == 1, f"Index must be either 0 (x) or 1 (y); found '{index}'"
     x = np.array(x)
-    w = model.weights_
-    m = model.means_[:, index:index+1]
-    c = model.covariances_[:, index:index+1, index:index+1]
-    gmm_marginal = GMM(n_components=len(w), weights_init=w, means_init=m, covariances_init=c)
-    logp_1d = gmm_marginal.score_samples(x.reshape(-1, 1))
-    p = np.exp(logp_1d)
-    return p*logp_1d
-
+    ws = model.weights_
+    ms = model.means_[:, index:index+1]
+    cs = model.covariances_[:, index:index+1, index:index+1]
+    # create marginal GMM model; do we really need it, or can we use the 2D model?
+    gmm_marginal = GMM(n_components=len(w), weights_init=ws, means_init=ms, covariances_init=cs)
+    logp = gmm_marginal.score_samples(x.reshape(-1, 1))
+    p = np.exp(logp)
+    integrand = p*logp
+    return integrand

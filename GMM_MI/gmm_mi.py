@@ -353,7 +353,7 @@ def calculate_MI(gmm, MI_method='MC', MC_samples=1e5, tol_int=1.49e-8, limit=np.
         Only used when MI_method='quad'.
     limit : float, default=np.inf
         The extrema of the integral to calculate. Usually the whole plane, so defaults to inf.
-        Only used when MI_method='quad'.
+        Only used when MI_method='quad'. Integral goes from -limit to +limit.
 
     Returns
     ----------
