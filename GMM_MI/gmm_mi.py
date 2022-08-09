@@ -246,7 +246,7 @@ def select_best_metric(X, results_dict, n_components,
         raise ValueError(f"select_c must be either 'valid', 'aic' or 'bic, found '{select_c}'")
     return metric
 
-def check_convergence(metric, best_metric, n_components, patience, patience_counter):
+def check_convergence(metric, best_metric, n_components, patience, patience_counter, verbose=False):
     """
     Check if convergence with respect to the number of components has been reached.
 
@@ -262,7 +262,9 @@ def check_convergence(metric, best_metric, n_components, patience, patience_coun
         Number of extra components to "wait" until convergence is declared.
     patience_counter : int
         Counter to keep track of how many components we added so far with respect to the patience.
-    
+    verbose : bool, default=False
+        Whether to print useful procedural statements.
+        
     Returns
     ----------
     converged : bool
@@ -275,10 +277,12 @@ def check_convergence(metric, best_metric, n_components, patience, patience_coun
     converged = False
     if metric > best_metric:
         best_metric = metric
-        print(f'Current components: {n_components}. Current metric: {best_metric:.3f}. Adding one component...')
+        if verbose:
+            print(f'Current components: {n_components}. Current metric: {best_metric:.3f}. Adding one component...')
     else:
         patience_counter += 1
-        print(f'Metric did not improve; increasing patience counter...')
+        if verbose:
+            print(f'Metric did not improve; increasing patience counter...')
         if patience_counter >= patience:
             converged = True
     return converged, best_metric, patience_counter
@@ -425,7 +429,7 @@ def perform_bootstrap(X, n_bootstrap, n_components,
 def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15, 
            tol=1e-6, max_iter=10000, max_components=100, select_c='valid', 
            patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
-           fixed_components_number=1, MI_method='MC', MC_samples=1e5): 
+           fixed_components_number=1, MI_method='MC', MC_samples=1e5, verbose=False): 
     """
     Calculate mutual information (MI) distribution on 2D data, using Gaussian mixture models (GMMs).
     The first part performs density estimation of the data using GMMs and k-fold cross-validation.
@@ -478,6 +482,8 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
             'quad': use quadrature integration, as implemented in scipy, with default parameters.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
+    verbose : bool, default=False
+        Whether to print useful procedural statements.
         
     Returns
     ----------
@@ -508,14 +514,16 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
             converged, best_metric, patience_counter = check_convergence(metric=metric, best_metric=best_metric, 
                                                                          n_components=n_components, 
                                                                          patience=patience,
-                                                                         patience_counter=patience_counter)
+                                                                         patience_counter=patience_counter, 
+                                                                         verbose=verbose)
                
         if converged:
             best_components, best_seed, w_init, m_init, p_init, lcurves = extract_best_parameters(results_dict=results_dict,
                                                                                                   n_components=n_components,    
                                                                                                   fixed_components=fixed_components,
                                                                                                   patience=patience)
-            print(f'Convergence reached at {best_components} components') 
+            if verbose:
+                print(f'Convergence reached at {best_components} components') 
             if bootstrap:
                 MI_mean, MI_std = perform_bootstrap(X=X, n_bootstrap=n_bootstrap, n_components=best_components, 
                                                     reg_covar=reg_covar, tol=tol, max_iter=max_iter, 

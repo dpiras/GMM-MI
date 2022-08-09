@@ -11,55 +11,6 @@ from utils.initializations import initialize_parameters
 import warnings
 
 
-def log_pdf(y, x, model):
-    """Calculate scale prefactor ('s') for the 'random' and 'minmax' initializations.
-    
-    Parameters
-    ----------
-    X : array-like of shape  (n_samples, n_features)
-        The data based on which the scale is calculated. 
-    n_components : int
-        Number of GMM components.
-        
-    Returns
-    ----------
-    scale : float
-        Scale prefactor, to be used to initialize the GMM.
-    """
-    y = np.array(y)
-    x = np.array(x)
-    X = np.concatenate((y.reshape(1, 1), x.reshape(1, 1))).T
-    return model.score_samples(X)
-
-
-def pdf(y, x):
-    return np.exp(log_pdf(y, x))
-
-
-def entropy_2d_integrand(y, x, model):
-    """
-    TODO
-    """
-    logp = log_pdf(y, x, model)
-    p = np.exp(logp)
-    return p*logp
-
-
-def entropy_1d_integrand(x, model, index):
-    """
-    TODO
-    """
-    # add check that index is either 0 or 1
-    x = np.array(x)
-    w = model.weights_
-    m = model.means_[:, index:index+1]
-    c = model.covariances_[:, index:index+1, index:index+1]
-    gmm_marginal = GMM(n_components=len(w), weights_init=w, means_init=m, covariances_init=c)
-    logp_1d = gmm_marginal.score_samples(x.reshape(-1, 1))
-    p = np.exp(logp_1d)
-    return p*logp_1d
-
-
 class GMM(GMM):
     """
     Custom Gaussian mixture model (GMM) class built on the sklearn GaussianMixture class. 
@@ -472,3 +423,52 @@ class GMM(GMM):
         MI = entropy_2d - entropy_1d_x - entropy_1d_y
         self.MI = MI
         return MI
+    
+def log_pdf(y, x, model):
+    """Calculate scale prefactor ('s') for the 'random' and 'minmax' initializations.
+    
+    Parameters
+    ----------
+    X : array-like of shape  (n_samples, n_features)
+        The data based on which the scale is calculated. 
+    n_components : int
+        Number of GMM components.
+        
+    Returns
+    ----------
+    scale : float
+        Scale prefactor, to be used to initialize the GMM.
+    """
+    y = np.array(y)
+    x = np.array(x)
+    X = np.concatenate((y.reshape(1, 1), x.reshape(1, 1))).T
+    return model.score_samples(X)
+
+
+def pdf(y, x):
+    return np.exp(log_pdf(y, x))
+
+
+def entropy_2d_integrand(y, x, model):
+    """
+    TODO
+    """
+    logp = log_pdf(y, x, model)
+    p = np.exp(logp)
+    return p*logp
+
+
+def entropy_1d_integrand(x, model, index):
+    """
+    TODO
+    """
+    # add check that index is either 0 or 1
+    x = np.array(x)
+    w = model.weights_
+    m = model.means_[:, index:index+1]
+    c = model.covariances_[:, index:index+1, index:index+1]
+    gmm_marginal = GMM(n_components=len(w), weights_init=w, means_init=m, covariances_init=c)
+    logp_1d = gmm_marginal.score_samples(x.reshape(-1, 1))
+    p = np.exp(logp_1d)
+    return p*logp_1d
+
