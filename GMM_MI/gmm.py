@@ -493,7 +493,7 @@ def entropy_1d_integrand(x, model, index):
     ms = model.means_[:, index:index+1]
     cs = model.covariances_[:, index:index+1, index:index+1]
     # create marginal GMM model; do we really need it, or can we use the 2D model?
-    gmm_marginal = GMM(n_components=len(w), weights_init=ws, means_init=ms, covariances_init=cs)
+    gmm_marginal = GMM(n_components=len(ws), weights_init=ws, means_init=ms, covariances_init=cs)
     logp = gmm_marginal.score_samples(x.reshape(-1, 1))
     p = np.exp(logp)
     integrand = p*logp
