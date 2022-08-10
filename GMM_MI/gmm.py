@@ -341,7 +341,7 @@ class GMM(GMM):
         _, log_resp = self._e_step(X)
         return log_resp.argmax(axis=1)
 
-    def score_samples_marginal(self, X, index=0):
+    def score_samples_marginal(self, X, index):
         """Compute the log-likelihood of each sample for the marginal model, 
         indexed by either 0 (x) or 1 (y).
         
@@ -479,6 +479,7 @@ def entropy_1d_integrand(x, model, index):
         The x variable.
     model : instance of class with score_samples method
         The model whose entropy we calculate; typically a GMM.
+        Must have a score_samples_marginal method.
     index : int
         The index used to calculate entropy, either 0 (x) or 1 (y).
     
@@ -488,13 +489,9 @@ def entropy_1d_integrand(x, model, index):
         The value of the integrand.
     """
     assert index == 0 or index == 1, f"Index must be either 0 (x) or 1 (y); found '{index}'"
-    x = np.array(x)
-    ws = model.weights_
-    ms = model.means_[:, index:index+1]
-    cs = model.covariances_[:, index:index+1, index:index+1]
-    # create marginal GMM model; do we really need it, or can we use the 2D model?
-    gmm_marginal = GMM(n_components=len(ws), weights_init=ws, means_init=ms, covariances_init=cs)
-    logp = gmm_marginal.score_samples(x.reshape(-1, 1))
+    x = np.array(x).reshape(1, 1)
+    logp = model.score_samples_marginal(x, index)
     p = np.exp(logp)
     integrand = p*logp
     return integrand
+    
