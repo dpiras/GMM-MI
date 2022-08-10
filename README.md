@@ -1,10 +1,9 @@
 # GMM-MI 
-Welcome to GMM-MI! This documentation is a work in progress.
+Welcome to GMM-MI! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. This documentation is a work in progress.
 
 Current missing features include:
 - full documentation and testing of the main module gmm_mi.py
 - more test notebooks, including all results from the paper
-- the installation instructions (including an example calculation of MI).
 
 ## Current state
 
@@ -13,19 +12,29 @@ As of July 30th 2022, we are observing a small MI bias when applying our estimat
 ## Installation
 
 To install GMM-MI, we currently recommend the following steps:
-1. Create custom `conda` environment: `conda create -n "gmm_mi" python=3.7`
-2. Activate it: `conda activate gmm_mi`
-3. Clone repository (with https you need to insert your GH credentials): `git clone https://github.com/dpiras/MI_estimation.git`
-4. Move into the cloned folder: `cd MI_estimation`
-5. Install `gmm_mi` and all its dependencies: `python setup.py install`
+1. `conda create -n "gmm_mi" python=3.7` (create custom `conda` environment) 
+2. `conda activate gmm_mi` (activate it)
+3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
+4. `cd MI_estimation` (move into cloned folder)
+5. `python setup.py install` (install `gmm_mi` and all its dependencies)
 
 We will make the package `pip` installable once we make the repository public.
 
 ## Example
 
-Once you installed GMM-MI, calculating the distribution of mutual information on your data is as easy as
+Once you installed GMM-MI, calculating the distribution of mutual information on your data is as easy as:
 
-    TBC
+    import numpy as np
+    from gmm_mi.gmm_mi import GMM_MI
+    # create simple bivariate Gaussian data
+    mean, cov = np.array([0, 0]), np.array([[1, 0.6], [0.6, 1]])
+    rng = np.random.default_rng(2)
+    X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
+    # calculate MI
+    MI_mean, MI_std = GMM_MI(X)
+
+This yields (0.214 \pm 0.043) nats, well in agreement with the theoretical value of 0.223 nats.
+A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/gmm_mi.py#L429)
 
 ## Citation
 If you use GMM-MI, please cite the corresponding paper:

@@ -7,7 +7,7 @@ def calculate_MI_D1_analytical(covariance_matrix):
     
     Parameters
     ----------
-    covariance_matrix : array-like of shape (1, 2, 2)
+    covariance_matrix : array-like of shape (2, 2)
         Covariance matrix of the bivariate Gaussian.
     
     Returns
@@ -15,6 +15,6 @@ def calculate_MI_D1_analytical(covariance_matrix):
     MI : float
         The value of mutual information in nats.
     """
-    assert covariance_matrix.shape==[1, 2, 2], "Covariance matrix must be of shape [1, 2, 2]."
-    MI = -0.5*np.log(1-(covariance_matrix[0, 0, 1] / (np.sqrt(covariance_matrix[0, 0, 0]*covariance_matrix[0, 1, 1])))**2)
+    assert covariance_matrix.shape==(2, 2), "Covariance matrix must be of shape (2, 2)."
+    MI = -0.5*np.log(1-(covariance_matrix[0, 1] / (np.sqrt(covariance_matrix[0, 0]*covariance_matrix[1, 1])))**2)
     return MI

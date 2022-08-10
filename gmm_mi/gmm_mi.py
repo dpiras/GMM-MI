@@ -6,8 +6,8 @@ import warnings
 
 
 def _run_cross_validation(X, kf, val_scores, all_ws, all_ms, all_ps, all_lcurves, n_components, 
-                          n_folds=3, n_inits=5, init_type='random_sklearn', 
-                          reg_covar=1e-15, tol=1e-6, max_iter=10000):        
+                          n_folds=3, n_inits=3, init_type='random_sklearn', 
+                          reg_covar=1e-15, tol=1e-5, max_iter=10000):        
     """
     Actually run the cross-validation (CV) procedure, filling all arrays and lists with results.
     
@@ -31,14 +31,14 @@ def _run_cross_validation(X, kf, val_scores, all_ws, all_ms, all_ps, all_lcurves
         Number of GMM components currently being fitted.
     n_folds : int, default=3
         Number of folds.
-    n_inits : int, default=5
+    n_inits : int, default=3
         Number of initializations.
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-6
+    tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
@@ -82,8 +82,8 @@ def _run_cross_validation(X, kf, val_scores, all_ws, all_ms, all_ps, all_lcurves
     return val_scores, all_ws, all_ms, all_ps, all_lcurves
     
     
-def cross_validation(X, n_components, n_folds=3, n_inits=5, init_type='random_sklearn', 
-                     reg_covar=1e-15, tol=1e-6, max_iter=10000):
+def cross_validation(X, n_components, n_folds=3, n_inits=3, init_type='random_sklearn', 
+                     reg_covar=1e-15, tol=1e-5, max_iter=10000):
     """
     Perform cross-validation (CV) to select the best GMM initialization parameters, 
     and thus avoid local minima in the density estimation.
@@ -96,14 +96,14 @@ def cross_validation(X, n_components, n_folds=3, n_inits=5, init_type='random_sk
         Number of GMM components currently being fitted.
     n_folds : int, default=3
         Number of folds.
-    n_inits : int, default=5
+    n_inits : int, default=3
         Number of initializations.
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-6
+    tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
@@ -148,7 +148,7 @@ def cross_validation(X, n_components, n_folds=3, n_inits=5, init_type='random_sk
     return results_dict        
     
 
-def single_fit(X, n_components, reg_covar=1e-15, tol=1e-6, max_iter=10000, 
+def single_fit(X, n_components, reg_covar=1e-15, tol=1e-5, max_iter=10000, 
                 random_state=None, w_init=None, m_init=None, p_init=None, val_set=None):
     """
     Perform a single fit of a GMM on input data.
@@ -161,7 +161,7 @@ def single_fit(X, n_components, reg_covar=1e-15, tol=1e-6, max_iter=10000,
         Number of GMM components to fit.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-6
+    tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
@@ -192,7 +192,7 @@ def single_fit(X, n_components, reg_covar=1e-15, tol=1e-6, max_iter=10000,
     
 def select_best_metric(X, results_dict, n_components,
                        select_c='valid', init_type='random_sklearn',
-                       reg_covar=1e-15, tol=1e-6, max_iter=10000):
+                       reg_covar=1e-15, tol=1e-5, max_iter=10000):
     """
     Select best metric to choose the number of GMM components.
 
@@ -215,7 +215,7 @@ def select_best_metric(X, results_dict, n_components,
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-6
+    tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
@@ -425,11 +425,11 @@ def perform_bootstrap(X, n_bootstrap, n_components,
     return MI_mean, MI_std
 
               
-    
-def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15, 
-           tol=1e-6, max_iter=10000, max_components=100, select_c='valid', 
-           patience=1, bootstrap=True, n_bootstrap=100, fixed_components=False, 
-           fixed_components_number=1, MI_method='MC', MC_samples=1e5, verbose=False): 
+def GMM_MI(X, n_folds=3, n_inits=3, init_type='random_sklearn', reg_covar=1e-15, 
+           tol=1e-5, max_iter=10000, max_components=100, select_c='valid', 
+           patience=1, bootstrap=True, n_bootstrap=50, fixed_components=False, 
+           fixed_components_number=1, MI_method='MC', MC_samples=1e5, return_lcurves=False, 
+           verbose=False): 
     """
     Calculate mutual information (MI) distribution on 2D data, using Gaussian mixture models (GMMs).
     The first part performs density estimation of the data using GMMs and k-fold cross-validation.
@@ -442,19 +442,19 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
         Samples from the joint distribution of the two variables whose MI is calculated.
     n_folds : int, default=3
         Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
-    n_inits : int, default=5
+    n_inits : int, default=3
         Number of initializations used to find the best initialization parameters.
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-6
+    tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
         so it is set to a high value.    
-    max_components : int, default=100
+    max_components : int, default=50
         Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.   
     select_c : {'valid', 'aic', 'bic'}, default='valid'
         Method used to select the optimal number of GMM components to perform density estimation.
@@ -468,7 +468,7 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
     bootstrap : bool, default=True, 
         Whether to perform bootstrap or not to get the uncertainty on MI. 
         If False, only a single value of MI is returned.
-    n_bootstrap : int, default=100 
+    n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
     
     ed_components : bool, default=False 
@@ -482,6 +482,8 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
             'quad': use quadrature integration, as implemented in scipy, with default parameters.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
+    return_lcurves : bool, default=False
+        Whether to return the loss curves or not (for debugging purposes).
     verbose : bool, default=False
         Whether to print useful procedural statements.
         
@@ -498,6 +500,7 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
     best_metric = -np.inf
     patience_counter = 0
     results_dict = {}    
+    assert X.shape[1] == 2, f"The shape of the data must be (n_samples, 2), found {X.shape}"
     assert select_c == 'valid' or select_c == 'aic' or select_c == 'bic', f"select_c must be either 'valid', 'aic' or 'bic, found '{select_c}'"
     for n_components in range(1, max_components+1):
         if fixed_components:
@@ -537,5 +540,9 @@ def GMM_MI(X, n_folds=3, n_inits=5, init_type='random_sklearn', reg_covar=1e-15,
                 MI_mean = calculate_MI(gmm, MI_method=MI_method, MC_samples=MC_samples)
                 MI_std = None
             break
-            
-    return MI_mean, MI_std, lcurves
+    
+    if return_lcurves:
+        return MI_mean, MI_std, lcurves        
+    else:
+        return MI_mean, MI_std
+    
