@@ -28,7 +28,7 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     from gmm_mi.gmm_mi import GMM_MI
     # create simple bivariate Gaussian data
     mean, cov = np.array([0, 0]), np.array([[1, 0.6], [0.6, 1]])
-    rng = np.random.default_rng(2)
+    rng = np.random.default_rng(0)
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
     MI_mean, MI_std = GMM_MI(X)
