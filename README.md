@@ -33,8 +33,8 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     # calculate MI
     MI_mean, MI_std = GMM_MI(X)
 
-This yields (0.214 \pm 0.043) nats, well in agreement with the theoretical value of 0.223 nats.
-A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/gmm_mi.py#L429)
+This yields (0.214 &pm; 0.043) nats, well in agreement with the theoretical value of 0.223 nats.
+A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/gmm_mi.py#L429).
 
 ## Citation
 If you use GMM-MI, please cite the corresponding paper:
