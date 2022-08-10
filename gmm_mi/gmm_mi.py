@@ -469,9 +469,8 @@ def GMM_MI(X, n_folds=3, n_inits=3, init_type='random_sklearn', reg_covar=1e-15,
         Whether to perform bootstrap or not to get the uncertainty on MI. 
         If False, only a single value of MI is returned.
     n_bootstrap : int, default=50 
-        Number of bootstrap realisations to consider to obtain the MI uncertainty.
-    
-    ed_components : bool, default=False 
+        Number of bootstrap realisations to consider to obtain the MI uncertainty.   
+    fixed_components : bool, default=False 
         Fix the number of GMM components to use for density estimation.
         For debugging purposes, or when you are sure of how many components to use.
     fixed_components_number : int, default=1
