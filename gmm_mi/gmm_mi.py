@@ -1,6 +1,6 @@
 import numpy as np
-from gmm import GMM
-from utils.initializations import initialize_parameters
+from gmm_mi.gmm import GMM
+from gmm_mi.initializations import initialize_parameters
 from sklearn.model_selection import KFold
 import warnings
 
