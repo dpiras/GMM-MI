@@ -1,13 +1,13 @@
 # GMM-MI 
-Welcome to GMM-MI! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. This documentation is a work in progress.
+
+Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. You can read more about GMM-MI [in our paper](https://www.overleaf.com/project/62920145c884448df7e9745c) (the link will be to the actual paper once submitted).
 
 Current missing features include:
-- full documentation and testing of the main module gmm_mi.py
 - more test notebooks, including all results from the paper
 
 ## Current state
 
-As of July 30th 2022, we are observing a small MI bias when applying our estimator. Please check [this jupyter notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/MI_D3p_significance.ipynb) for a minimum working example, and do not hesitate to let me know if you have any problems with it.
+As of July 30th 2022, we are observing a small MI bias when applying our estimator. Please check [this jupyter notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/MI_D3p_significance.ipynb) for a minimum working example. Remove?
 
 ## Installation
 
