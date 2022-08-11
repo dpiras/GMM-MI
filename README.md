@@ -18,7 +18,7 @@ To install GMM-MI, we currently recommend the following steps:
 4. `cd MI_estimation` (move into cloned folder)
 5. `python setup.py install` (install `gmm_mi` and all its dependencies)
 
-We will make the package `pip` installable once we make the repository public.
+We will make the package `pip` installable once we make the repository public, and update these instructions.
 
 ## Example
 
