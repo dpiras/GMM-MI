@@ -57,7 +57,7 @@ GMM-MI is released under the GPL-3 license - see [LICENSE](https://github.com/dp
 the non-commercial use condition - see [LICENSE_EXT](https://github.com/dpiras/MI_estimation/blob/main/LICENSE_EXT.txt).
 
      GMM-MI
-     Copyright (C) 2022 Author names & contributors
+     Copyright (C) 2022 Davide Piras & contributors
 
      This program is released under the GPL-3 license (see LICENSE.txt), 
      subject to a non-commercial use condition (see LICENSE_EXT.txt).
