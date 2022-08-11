@@ -161,7 +161,28 @@ class GMM(GMM):
         """
         _, log_resp = self._estimate_log_prob_resp(X)
         return np.exp(log_resp)
-
+    
+    def _initialize_parameters(self):
+        """Initialize the model parameters. Since we deal with initialization 
+        before running the GMM, this simply returns the inital parameters.
+        
+        Parameters
+        ----------
+        None
+        
+        Returns
+        -------
+        None         
+        """
+        self.weights_ = self.weights_init
+        self.means_ = self.means_init       
+        self.precisions_cholesky_ = np.array(
+            [
+                linalg.cholesky(prec_init, lower=True)
+                for prec_init in self.precisions_init
+            ]
+        )        
+        
     def sample(self, n_samples=1):
         """Generate random samples from the Gaussian mixture model.
         Removed check_is_fitted function.
@@ -278,7 +299,7 @@ class GMM(GMM):
                 f"but got n_components = {self.n_components}, "
                 f"n_samples = {X.shape[0]}"
             )
-        self._check_initial_parameters(X)
+        self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
 
         do_init = True
         n_init = 1
@@ -287,15 +308,17 @@ class GMM(GMM):
         random_state = check_random_state(self.random_state)
 
         n_samples, _ = X.shape
+        
         for init in range(n_init):
             self._print_verbose_msg_init_beg(init)
+            
             if do_init:
-                self._initialize_parameters(X, random_state)
+                self._initialize_parameters()
             
             lower_bound = -np.inf if do_init else self.lower_bound_
             if val_set is not None:
                 self.train_loss, self.val_loss = [], []
-                
+  
             for n_iter in range(1, self.max_iter + 1):
                 prev_lower_bound = lower_bound
                 log_prob_norm, log_resp = self._e_step(X)
