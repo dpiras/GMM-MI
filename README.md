@@ -7,7 +7,7 @@ Current missing features include:
 
 ## Current state
 
-As of August 11th 2022, we have collected most results and only need to make them available in the `notebooks` folder. We are observing a small MI bias when applying our estimator; please check [this jupyter notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/1_MI_D3p_significance.ipynb) for a simple example. This will be addressed soon, as we put together all the results that will go in the paper.
+As of August 11th 2022, we have collected most results and only need to make them available in the `notebooks` folder. We are observing a small MI bias when applying our estimator; please check [this jupyter notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/2_MI_D3p_significance.ipynb) for a simple example. This will be addressed soon, as we put together all the results that will go in the paper.
 
 ## Installation
 
