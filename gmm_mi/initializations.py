@@ -17,7 +17,7 @@ class Inits:
         self.n_components = n_components
         self.init_type = init_type
         if scale is None and (self.init_type=='random' or self.init_type=='minmax'):
-            self.scale = self.calculate_scale(X, n_components) 
+            self.scale = self.calculate_scale() 
         else:
             self.scale = scale
         self.reg_covar = reg_covar             
@@ -105,7 +105,7 @@ class KmeansInit(Inits):
             mask = (label == k)
             weights[k] = mask.sum() / len(self.X)
             means[k,:] = self.X[mask].mean(axis=0)
-            d_m = X[mask] - means[k,:] 
+            d_m = self.X[mask] - means[k,:] 
             # funny way of saying: for each point i, do the outer product of d_m with its transpose and sum over i
             # in other words, simply the definition of sample covariance matrix
             covariances[k,:,:] = (d_m[:, :, None] * d_m[:, None, :]).sum(axis=0) / len(self.X)

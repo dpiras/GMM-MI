@@ -4,6 +4,9 @@ In this folder we share notebooks with example use cases of GMM-MI, as well as t
 
 ## List of available notebooks
 
-- [0_calculate_MI_synthetic_datasets.ipynb](https://github.com/dpiras/MI_estimation/blob/main/notebooks/0_calculate_MI_synthetic_datasets.ipynb): calculate MI for all the synthetic datasets found in `gmm_mi/data`.
-- [1_MI_D3_significance.ipynb](https://github.com/dpiras/MI_estimation/blob/main/notebooks/1_MI_D3_significance.ipynb): residual analysis for a dataset with 3 components, D3. Left panel of Fig. 2 in the paper.
+- [0_calculate_MI_synthetic_datasets](https://github.com/dpiras/MI_estimation/blob/main/notebooks/0_calculate_MI_synthetic_datasets.ipynb): calculate MI for all the synthetic datasets found in `gmm_mi/data`.
+- [1_MI_D3_significance](https://github.com/dpiras/MI_estimation/blob/main/notebooks/1_MI_D3_significance.ipynb): residual analysis for a dataset with 3 components, D3. Left panel of Fig. 2 in the paper.
+- [2_MI_D3p_significance](https://github.com/dpiras/MI_estimation/blob/main/notebooks/2_MI_D3p_significance.ipynb): residual analysis for another dataset with 3 components, D3', where the components are more separated.
+- [3_MI_D5_significance](https://github.com/dpiras/MI_estimation/blob/main/notebooks/3_MI_D5_significance.ipynb): residual analysis for a dataset with 5 components, D5. Middle panel of Fig. 2 in the paper.
+- [4_MI_D5_significance](https://github.com/dpiras/MI_estimation/blob/main/notebooks/4_MI_D5p_significance.ipynb): residual analysis for a dataset with 5 components, D5'. This is identical to D5, but one component is shifted to the right. Right panel of Fig. 2 in the paper.
 
