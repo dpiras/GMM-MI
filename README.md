@@ -18,7 +18,7 @@ To install GMM-MI, we currently recommend the following steps:
 2. `conda activate gmm_mi` (activate it)
 3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
 4. `cd MI_estimation` (move into cloned folder)
-5. `python setup.py install` (install `gmm_mi` and all its dependencies)
+5. `python setup.py install` (install `gmm_mi` and all its dependencies); alternatively, `pip install .` should also work.
 
 We will make the package `pip` installable once we make the repository public, and update these instructions.
 
