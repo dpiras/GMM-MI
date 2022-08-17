@@ -5,7 +5,6 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 Current missing features include:
 - more test notebooks, including all results from the paper
 - turn modules into clearer classes
-- add READMEs into subfolders, to explain their content
 
 ## Current state
 
