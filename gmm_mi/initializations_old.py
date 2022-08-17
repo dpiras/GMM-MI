@@ -28,31 +28,7 @@ def calculate_scale(X, n_components):
     scale = (vol_data / n_components * gamma(n_features*0.5 + 1))**(1/n_features) / np.sqrt(np.pi)
     return scale
     
-def add_regularization(covariances, reg_covar, X, n_components):
-    """Add regularization to the diagonal of the covariance matrices, to avoid singularities.
     
-    Parameters
-    ----------
-    covariances : array, shape (n_components, n_features, n_features)
-        The unregularized covariance matrices of the GMM model.  
-    reg_covar : float
-        Constant regularization term added to the diagonal of each covariance matrix.
-    X : array-like of shape (n_samples, n_features)
-        The data based on which the GMM initialization is calculated.    
-    n_components : int
-        Number of GMM components.
-        
-    Returns
-    ---------- 
-    covariances : array, shape (n_components, n_features, n_features)
-        The regularized covariance matrices of the GMM model.  
-    """
-    _, n_features = X.shape
-    regularization = np.repeat((reg_covar*np.eye(n_features))[np.newaxis, :, :], n_components, axis=0)
-    covariances += regularization   
-    return covariances   
-
-
 def random_initialization(X, n_components, scale, random_state):
     """Calculate GMM parameters randomly. See initialize_parameters for more details.
     
@@ -76,7 +52,14 @@ def random_initialization(X, n_components, scale, random_state):
     covariances : array, shape (n_components, n_features, n_features)
         The initial covariance matrices of the GMM model.        
     """
-
+    n_samples, n_features = X.shape
+    weights = np.repeat(1/n_components, n_components)
+    # initialize components around data points with uncertainty s
+    refs = random_state.randint(0, n_samples, size=n_components)
+    means = X[refs] + random_state.multivariate_normal(np.zeros(n_features), scale**2 * np.eye(n_features), size=n_components)
+    covariances = np.repeat(scale**2 * np.eye(n_features)[np.newaxis, :, :], n_components, axis=0)
+    return weights, means, covariances
+ 
     
 def minmax_initialization(X, n_components, scale, random_state):
     """Calculate GMM parameters randomly, but with the means sampeld between the minimum and maximum value of the data. 
@@ -249,61 +232,33 @@ def kmeans_sklearn_initialization(X, n_components, random_state):
     weights, means, covariances = calculate_parameters_from_responsibilities(responsibilities, X)    
     return weights, means, covariances
 
-
+def add_regularization(covariances, reg_covar, X, n_components):
+    """Add regularization to the diagonal of the covariance matrices, to avoid singularities.
+    
+    Parameters
+    ----------
+    covariances : array, shape (n_components, n_features, n_features)
+        The unregularized covariance matrices of the GMM model.  
+    reg_covar : float
+        Constant regularization term added to the diagonal of each covariance matrix.
+    X : array-like of shape (n_samples, n_features)
+        The data based on which the GMM initialization is calculated.    
+    n_components : int
+        Number of GMM components.
+        
+    Returns
+    ---------- 
+    covariances : array, shape (n_components, n_features, n_features)
+        The regularized covariance matrices of the GMM model.  
+    """
+    _, n_features = X.shape
+    regularization = np.repeat((reg_covar*np.eye(n_features))[np.newaxis, :, :], n_components, axis=0)
+    covariances += regularization   
+    return covariances
 
     
-
-class ChooseInit:
-    def __init__(self, X, random_state=None, n_components=1, 
-                 init_type='random_sklearn', scale=None, reg_covar=0):
-        self.X = X
-        self.n_samples, self.n_features = self.X.shape
-        self.random_state = check_random_state(random_state)
-        self.n_components = n_components
-        self.init_type = init_type
-        if scale is None and (self.init_type=='random' or self.init_type=='minmax'):
-            self.scale = calculate_scale(X, n_components) 
-        else:
-            self.scale = scale
-        self.reg_covar = reg_covar             
-
-
-class RandomInit(ChooseInit):
-    def calculate_parameters(self):
-    weights = np.repeat(1/self.n_components, self.n_components)
-    # initialize components around data points with uncertainty s
-    refs = self.random_state.randint(0, self.n_samples, size=self.n_components)
-    means = self.X[refs] + self.random_state.multivariate_normal(np.zeros(self.n_features), 
-                                                                 self.scale**2 * np.eye(n_features), size=n_components)
-    covariances = np.repeat(scale**2 * np.eye(n_features)[np.newaxis, :, :], n_components, axis=0)
-    return weights, means, covariances
- 
-
-
-    elif init_type == "minmax":
-        weights, means, covariances = minmax_initialization(X=X, n_components=n_components,
-                                                            scale=scale, random_state=random_state)
-    elif init_type == 'kmeans':
-        weights, means, covariances = kmeans_initialization(X=X, n_components=n_components, 
-                                                            random_state=random_state)
-    elif init_type == "random_sklearn":
-        weights, means, covariances = random_sklearn_initialization(X=X, n_components=n_components, 
-                                                                    random_state=random_state)
-    elif init_type == "kmeans_sklearn":
-         weights, means, covariances = kmeans_sklearn_initialization(X=X, n_components=n_components, 
-                                                                     random_state=random_state)
-    else:
-        raise ValueError(f"Initialisation type not known. It should be one of "
-                         f"'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
-
-
-
-
-_init_type_to_class_map = {'random': RandomInit, 'kmeans': KmeansInit, 'minmax': MinMaxInit, 
-                           'random_sklearn': RandomSklearnInit, 'kmeans_sklearn': KmeansSklearnInit}
-
 def initialize_parameters(X, random_state=None, n_components=1, init_type='random_sklearn', scale=None, reg_covar=0):
-    """Initialize the Gaussian mixture model (GMM) parameters (weights, means, covariances and precisions).
+    """Initialize the Guassian mixture model (GMM) parameters (weights, means, covariances and precisions).
     
     Parameters
     ----------
@@ -345,10 +300,26 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     precisions : array, shape (n_components, n_features, n_features)
         The initial precision matrices of the GMM model (inverse of covariance).  
     """
-    if init_type in ['random', 'kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn']:
-        InitClass = _init_type_to_class_map[init_type]
-        init_class = InitClass(X)TBC
-        weights, means, covariances = init_class.calculate_parameters()TBC
+    random_state = check_random_state(random_state)
+    
+    if scale is None and (init_type=='random' or init_type=='minmax'):
+        scale = calculate_scale(X, n_components) 
+        
+    if init_type == "random":
+        weights, means, covariances = random_initialization(X=X, n_components=n_components, 
+                                                            scale=scale, random_state=random_state)
+    elif init_type == "minmax":
+        weights, means, covariances = minmax_initialization(X=X, n_components=n_components,
+                                                            scale=scale, random_state=random_state)
+    elif init_type == 'kmeans':
+        weights, means, covariances = kmeans_initialization(X=X, n_components=n_components, 
+                                                            random_state=random_state)
+    elif init_type == "random_sklearn":
+        weights, means, covariances = random_sklearn_initialization(X=X, n_components=n_components, 
+                                                                    random_state=random_state)
+    elif init_type == "kmeans_sklearn":
+         weights, means, covariances = kmeans_sklearn_initialization(X=X, n_components=n_components, 
+                                                                     random_state=random_state)
     else:
         raise ValueError(f"Initialisation type not known. It should be one of "
                          f"'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
