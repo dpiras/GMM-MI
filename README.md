@@ -8,7 +8,7 @@ Current missing features include:
 ## Installation
 
 To install GMM-MI, we currently recommend the following steps:
-1. `conda create -n "gmm_mi" python=3.7` (create custom `conda` environment) 
+1. `conda create -n gmm_mi python=3.7` (create custom `conda` environment) 
 2. `conda activate gmm_mi` (activate it)
 3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
 4. `cd MI_estimation` (move into cloned folder)
