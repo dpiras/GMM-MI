@@ -4,7 +4,6 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 
 Current missing features include:
 - more test notebooks, including all results from the paper
-- turn modules into clearer classes
 
 ## Installation
 
@@ -14,6 +13,7 @@ To install GMM-MI, we currently recommend the following steps:
 3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
 4. `cd MI_estimation` (move into cloned folder)
 5. `python setup.py install` (install `gmm_mi` and all its dependencies); alternatively, `pip install .` should also work.
+6. `pytest` (to make sure the installation worked correctly)
 
 We will make the package `pip` installable once we make the repository public, and update these instructions.
 
@@ -22,13 +22,13 @@ We will make the package `pip` installable once we make the repository public, a
 Once you installed GMM-MI, calculating the distribution of mutual information on your data is as easy as:
 
     import numpy as np
-    from gmm_mi.gmm_mi import GMM_MI
+    from gmm_mi.mi import EstimateMI
     # create simple bivariate Gaussian data
     mean, cov = np.array([0, 0]), np.array([[1, 0.6], [0.6, 1]])
     rng = np.random.default_rng(0)
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
-    MI_mean, MI_std = GMM_MI(X)
+    MI_mean, MI_std = EstimateMI().fit(X)
 
 This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats.
 A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/gmm_mi.py#L6).
