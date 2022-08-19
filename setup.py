@@ -19,6 +19,7 @@ setup(
     ],
     python_requires='>=3.7',
     install_requires=['pyyaml',
+                      'pytest',
                       'matplotlib==3.1.2',
                       'numpy==1.17.4',
                       'pandas==1.3.4',
