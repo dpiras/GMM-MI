@@ -3,4 +3,4 @@ __pycache__
 .ipynb_checkpoints
 
 # created by MINE experiments
-./notebooks/lightning_logs/*
+notebooks/lightning_logs/*
