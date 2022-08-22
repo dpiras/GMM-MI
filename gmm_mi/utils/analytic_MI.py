@@ -51,9 +51,10 @@ def calculate_MI_weinman_analytical(alpha):
     MI : float
         The value of mutual information in nats.
     """
+    # psi is the digamma function
     if 0 < alpha < 0.5:
-        return  -np.log(2*alpha / (1-2*alpha)) + psi( 1 / (1-2*alpha)) -psi(1)
-    elif theta == 0.5:
+        return -np.log(2*alpha / (1-2*alpha)) + psi( 1 / (1-2*alpha)) -psi(1)
+    elif alpha == 0.5:
         return -psi(1)
     else:
-        return  np.log( (2*alpha-1)  / (2*alpha)) + psi( (2*alpha) / (2*alpha-1)) -psi(1)
+        return np.log( (2*alpha-1)  / (2*alpha)) + psi( (2*alpha) / (2*alpha-1)) -psi(1)
