@@ -4,6 +4,7 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 
 Current missing features include:
 - more test notebooks, including all results from the paper
+- make all notebooks runnable from colab?
 
 ## Installation
 
