@@ -12,4 +12,6 @@ In this folder we share notebooks with example use cases of GMM-MI, as well as t
 - [5_Gaussian_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/5_Gaussian_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators on a Gaussian distribution with varying level of correlation. Top panel of Fig. 1 in the paper.
 - [6_gamma_exp_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/6_gamma_exp_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators on a gamma-exponential distribution  with varying $\alpha$. Middle panel of Fig. 1 in the paper.
 - [7_weinman_exp_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/7_weinman_exp_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators on a Weinman exponential distribution with varying $\alpha$. Bottom panel of Fig. 1 in the paper.
+- [8_boostrap_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/8_boostrap_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators when performing bootstrap to obtain the full MI distribution on a bivariate Gaussian dataset. Fig. 3 in the paper.
+
 
