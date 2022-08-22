@@ -39,7 +39,7 @@ More example notebooks, including all results from the paper, are available in [
 
 ## Contributing and contacts
 
-Feel free to [fork](https://github.com/dpiras/MI_estimation/fork) this repository to work on it; otherwise, please [raise an issue](https://github.com/dpiras/MI_estimation/issues) or contact [Davide Piras](mailto:d.piras@ucl.ac.uk).
+Feel free to [fork](https://github.com/dpiras/MI_estimation/fork) this repository to work on it; otherwise, please [raise an issue](https://github.com/dpiras/MI_estimation/issues) or contact [Davide Piras](mailto:dr.davide.piras@gmail.com).
 
 ## Citation
 If you use GMM-MI, please cite the corresponding paper:
