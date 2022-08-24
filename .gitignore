@@ -2,5 +2,9 @@ __pycache__
 
 .ipynb_checkpoints
 
+./old_stuff/*
+
 # created by MINE experiments
 notebooks/lightning_logs/*
+
+

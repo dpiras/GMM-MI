@@ -4,7 +4,11 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 
 Current missing features include:
 - more test notebooks, including all results from the paper
-- make all notebooks runnable from colab?
+- add plotting of fitted model on top of data
+- add threshold in step 4
+- make sure the parameter naming is clear, and explain them in the README
+- make console messages more informative
+- can we make it faster with some form of parallelisation? especially CV!
 
 ## Installation
 

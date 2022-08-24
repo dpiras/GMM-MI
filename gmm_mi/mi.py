@@ -11,45 +11,57 @@ class EstimateMI:
     ----------
     n_folds : int, default=2
         Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
+        A good value should ensure each fold has enough samples to be representative of your training set.
     n_inits : int, default=3
         Number of initializations used to find the best initialization parameters.
+        A higher value will decrease the chances of stopping at a local optimum, while making the code slower.
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
+        A smaller value will increase the chances of singular matrices, but will have a smaller impact
+        on the final MI estimates.
     tol : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
+        A smaller value will improve the fit quality and reduce the chances of stopping at a local optimum,
+        while making the code considerably slower.
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
-        so it is set to a high value.    
+        so it is set to a high value. A warning is raised if this threshold is reached; in that case, 
+        simply increase this value, or check that you really need such a small `tol` value.
     max_components : int, default=50
-        Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.   
-    select_c : {'valid', 'aic', 'bic'}, default='valid'
-        Method used to select the optimal number of GMM components to perform density estimation.
+        Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.
+        A warning is raised if this number of components is used; if so, you might want to use a different
+        `metric_method`.
+    metric_method : {'valid', 'aic', 'bic'}, default='valid'
+        Metric used to select the optimal number of GMM components to perform density estimation.
         Must be one of:
             'valid': stop adding components when the validation log-likelihood stops increasing.
-            'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing
+            'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing.
             'bic': same as 'aic' but with the Bayesian information criterion (BIC).
     patience : int, default=1, 
-        Number of extra components to "wait" until convergence is declared. 
-        Same concept as patience when training a neural network.
+        Number of extra components to "wait" until convergence is declared. Must be at least 1.
+        Same concept as patience when training a neural network. A higher value will fit models
+        with higher numbers of GMM components, so try to keep it low to make the code more efficient.
     bootstrap : bool, default=True, 
         Whether to perform bootstrap or not to get the uncertainty on MI. 
         If False, only a single value of MI is returned.
     n_bootstrap : int, default=50 
-        Number of bootstrap realisations to consider to obtain the MI uncertainty.   
-    fixed_components : bool, default=False 
-        Fix the number of GMM components to use for density estimation.
-        For debugging purposes, or when you are sure of how many components to use.
-    fixed_components_number : int, default=1
-        The number of GMM components to use. Only used if fixed_components == True.
+        Number of bootstrap realisations to consider to obtain the MI uncertainty.
+        A higher value will return a better estimate of the MI uncertainty, and
+        the MI distribution will be more Gaussian-like, but it will take longer.
+    fixed_components_number : int, default=0
+        The number of GMM components to use. If 0 (default), will do cross-validation to select 
+        the number of components, and ignore this. Else, use this specified number of components,
+        and ignore cross-validation.
     MI_method : {'MC', 'quad'}, default='MC' 
         Method to calculate the MI integral. Must be one of:
             'MC': use Monte Carlo integration with MC_samples samples.
             'quad': use quadrature integration, as implemented in scipy, with default parameters.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
+        A higher value will return less noisy estimates of MI, but will take longer.
     return_lcurves : bool, default=False
         Whether to return the loss curves or not (for debugging purposes).
     verbose : bool, default=False
@@ -60,17 +72,19 @@ class EstimateMI:
     converged : bool
         Flag to check whether we found the optimal number of components. Initially False.
     best_metric : float
-        Metric that is tracked to decide convergence with respect to the number of components.
+        Metric value that is tracked to decide convergence with respect to the number of components.
+        This can be either the validation log-likelihood, the AIC or BIC.
     patience_counter : int
         Counter to keep track of patience. Initially 0.
     results_dict : dict
         To keep track of the cross-validation results, and decide convergence.
+    fixed_components : bool
+        Set to True only if the user fixes a number of GMM components > 0.
     """
     def __init__(self, n_folds=2, n_inits=3, init_type='random_sklearn', reg_covar=1e-15, 
-           tol=1e-5, max_iter=10000, max_components=100, select_c='valid', 
-           patience=1, bootstrap=True, n_bootstrap=50, fixed_components=False, 
-           fixed_components_number=1, MI_method='MC', MC_samples=1e5, return_lcurves=False, 
-           verbose=False): 
+                 tol=1e-5, max_iter=10000, max_components=100, metric_method='valid', 
+                 patience=1, bootstrap=True, n_bootstrap=50, fixed_components_number=0, 
+                 MI_method='MC', MC_samples=1e5, return_lcurves=False, verbose=False): 
         self.n_folds = n_folds
         self.n_inits = n_inits
         self.init_type = init_type
@@ -78,12 +92,14 @@ class EstimateMI:
         self.tol = tol
         self.max_iter = max_iter
         self.max_components = max_components
-        self.select_c = select_c
+        assert metric_method == 'valid' or metric_method == 'aic' or metric_method == 'bic', f"metric_method must be either 'valid', 'aic' or 'bic, found '{metric_method}'"
+        self.metric_method = metric_method
+        assert patience >= 1, f"patience should be at least 1, found {patience}."
         self.patience = patience
         self.bootstrap = bootstrap
         self.n_bootstrap = n_bootstrap
-        self.fixed_components = fixed_components
         self.fixed_components_number = fixed_components_number
+        self.fixed_components = True if self.fixed_components_number > 0 else False
         self.MI_method = MI_method
         self.MC_samples = MC_samples
         self.return_lcurves = return_lcurves
@@ -93,7 +109,6 @@ class EstimateMI:
         self.best_metric = -np.inf
         self.patience_counter = 0
         self.results_dict = {}    
-        assert select_c == 'valid' or select_c == 'aic' or select_c == 'bic', f"select_c must be either 'valid', 'aic' or 'bic, found '{select_c}'"
         
     def _select_best_metric(self, n_components):
         """Select best metric to choose the number of GMM components.
@@ -108,7 +123,7 @@ class EstimateMI:
         metric : float
             The value of the metric selected to choose the number of components.
         """    
-        if self.select_c == 'aic' or self.select_c == 'bic':
+        if self.metric_method == 'aic' or self.metric_method == 'bic':
             # in this case we need to re-fit the dataset; we start from the final point
             _, _, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components, 
                                                                    fixed_components=False, 
@@ -116,15 +131,15 @@ class EstimateMI:
             gmm = single_fit(X=self.X, n_components=n_components, reg_covar=self.reg_covar, 
                              tol=self.tol, max_iter=self.max_iter, 
                              w_init=w_init, m_init=m_init, p_init=p_init)                
-            if self.select_c == 'aic':
+            if self.metric_method == 'aic':
                 # negative since we maximise the metric
                 metric = -gmm.aic(self.X)
-            elif self.select_c == 'bic':
+            elif self.metric_method == 'bic':
                 metric = -gmm.bic(self.X)
-        elif self.select_c == 'valid':
+        elif self.metric_method == 'valid':
             metric = self.results_dict[n_components]['best_val_score']
         else:
-            raise ValueError(f"select_c must be either 'valid', 'aic' or 'bic, found '{select_c}'")
+            raise ValueError(f"metric_method must be either 'valid', 'aic' or 'bic, found '{self.metric_method}'")
         return metric        
 
     def _extract_best_parameters(self, n_components, fixed_components, patience):
@@ -183,8 +198,10 @@ class EstimateMI:
         else:
             self.patience_counter += 1
             if self.verbose:
-                print(f'Metric did not improve; increasing patience counter...')
+                print(f'Metric did not improve; patience counter increased by 1.')
             if self.patience_counter >= self.patience:
+                if self.verbose:
+                    print(f'Reached patience limit, stop adding components.')
                 self.converged = True
 
     def _calculate_MI(self, gmm, tol_int=1.49e-8, limit=np.inf):
@@ -273,7 +290,7 @@ class EstimateMI:
             Only returned if return_lcurves is true.
         """
         assert X.shape[1] == 2, f"The shape of the data must be (n_samples, 2), found {X.shape}"    
-        self.X = X
+        self.X = X          
         for n_components in range(1, self.max_components+1):
             if self.fixed_components:
                 if n_components < self.fixed_components_number:

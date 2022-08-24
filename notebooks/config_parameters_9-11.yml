@@ -6,10 +6,9 @@ tol: 1.e-5
 reg_covar: 1.e-15
 max_iter: 10000
 bootstrap: True
-fixed_components: False
 n_bootstrap: 100
 MC_samples: 1.e+5
-select_c: 'valid'
+metric_method: 'valid'
 patience: 1
 verbose: False
 return_lcurves: False
