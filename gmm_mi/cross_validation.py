@@ -44,8 +44,8 @@ class CrossValidation:
         self.val_scores = np.zeros((self.n_inits, self.n_folds))    
         # create empty arrays for final GMM parameters, and loss curves
         self.all_ws = np.zeros((self.n_inits, self.n_folds, self.n_components))
-        self.all_ms = np.zeros((self.n_inits, self.n_folds, self.n_components, 2))
-        self.all_ps = np.zeros((self.n_inits, self.n_folds, self.n_components, 2, 2))    
+        self.all_ms = np.zeros((self.n_inits, self.n_folds, self.n_components, self.features))
+        self.all_ps = np.zeros((self.n_inits, self.n_folds, self.n_components, self.features, self.features))    
         self.all_lcurves = []
         # random split seed is fixed here, but results should be independent of the exact split
         self.kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=42)
@@ -56,7 +56,7 @@ class CrossValidation:
         
         Parameters
         ----------
-            X : array-like of shape (n_samples, 2)
+            X : array-like of shape (n_samples, n_features)
                 Data on which CV is performed.
         """
         for random_state in range(self.n_inits):
@@ -87,7 +87,7 @@ class CrossValidation:
         
         Parameters
         ----------
-        X : array-like of shape (n_samples, 2)
+        X : array-like of shape (n_samples, n_features)
             Data on which CV is performed.
         
         Returns
@@ -102,6 +102,7 @@ class CrossValidation:
             'all_ms': all means of the fitted GMM models.
             'all_ps': all precisions of the fitted GMM models.
         """
+        self.features = X.shape[1]
         self._create_containers()
         self._run_cross_validation(X)
         # select seed with highest val score across the different inits

@@ -328,4 +328,142 @@ class EstimateMI:
             return MI_mean, MI_std, self.lcurves        
         else:
             return MI_mean, MI_std    
+ 
+    def _calculate_MI_categorical(self):
+        """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
+        Use only Monte Carlo (MC) method. 
+        The complete formula can be found in Appendix B of Piras et al. (2022).
+
+        Returns
+        ----------
+        MI : float
+            The value of MI.
+        """    
+        MI = 0 
+        for category_value in range(self.category_values):
+            samples = self.all_gmms[category_value].sample(self.MC_samples)[0]
+            log_p = self.all_gmms[category_value].score_samples(samples)
+            p_inner = 0
+            for inner_category_value in range(self.category_values):
+                p_inner += np.exp(self.all_gmms[inner_category_value].score_samples(samples))
+            p = np.log(p_inner/self.category_values)
+            MI += np.mean(log_p - p)
+        MI /= self.category_values
+        return MI
+     
+    def _perform_bootstrap_categorical(self):
+        """Perform bootstrap on the given data to calculate the distribution of mutual information (MI),
+        in the categorical-continuous case. If bootstrap is not requested, do only a single fit on 
+        the entire dataset.
+
+        Returns
+        ----------
+        MI_mean : float
+            Mean of the MI distribution.
+        MI_std : float
+            Standard deviation of the MI distribution. None if bootstrap==False.
+        """  
+        if not self.bootstrap:
+            self.n_bootstrap = 1
+        MI_estimates = np.zeros(self.n_bootstrap)
+        for n_b in range(self.n_bootstrap):
+            # we use index n_b to change the seed so that results will be fully reproducible
+            rng = np.random.default_rng(n_b)
+            
+            # to store the fitted GMM models for each category value
+            self.all_gmms = []
+            for category_value in range(self.category_values):   
+                current_ids = np.where(self.y == category_value)
+                # we select the relevant latents again
+                current_latents = self.X[current_ids]
+                current_latents = np.reshape(current_latents, (-1, 1))
+                n_components = self.category_best_params[category_value]['bc']
+                w_init = self.category_best_params[category_value]['w']
+                m_init = self.category_best_params[category_value]['m']
+                p_init = self.category_best_params[category_value]['p']
+                random_state = self.category_best_params[category_value]['seed']
+                X_bs = rng.choice(current_latents, current_latents.shape[0])
+                if not self.bootstrap:
+                    X_bs = current_latents 
+                gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
+                                 tol=self.tol, max_iter=self.max_iter, random_state=random_state, 
+                                 w_init=w_init, m_init=m_init, p_init=p_init)               
+                self.all_gmms.append(gmm)
+            MI_estimates[n_b] = self._calculate_MI_categorical()
+
+        MI_mean = np.mean(MI_estimates)
+        MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if self.bootstrap else None
+        return MI_mean, MI_std
        
+    def fit_categorical(self, X, y):
+        """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
+        The first part performs density estimation of the conditional distributions, using GMMs and k-fold cross-validation.
+        The second part uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
+        The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
+        The complete formula can be found in Appendix B of Piras et al. (2022).
+
+        Parameters
+        ----------  
+        X : array-like of shape (n_samples)
+            Samples of the continuous variable.
+        y : array-like of shape (n_samples)   
+            Categorical values corresponding to X.
+        
+        Returns
+        ----------
+        MI_mean : float
+            Mean of the MI distribution.
+        MI_std : float
+            Standard deviation of the MI distribution.
+        """
+        assert len(X.shape) == 1, f"The shape of the continuous data must be (n_samples), found {X.shape}"    
+        assert len(y.shape) == 1, f"The shape of the categorical data must be (n_samples), found {y.shape}"
+        assert X.shape[0] == y.shape[0], f"The length of the categorical and continuous data must be the same!"
+        self.X = X           
+        self.y = y 
+        self.category_values = len(np.unique(y))
+
+        self.category_best_params = [] # used to store parameters of each GMM fit
+        for category_value in range(self.category_values):
+            current_ids = np.where(y == category_value)
+            # select latents corresponding to current category value
+            current_latents = X[current_ids]
+            # need to fit the current latents; this is p(z_i | f_i = category_value)
+            current_latents = np.reshape(current_latents, (-1, 1))
+            
+            # initialize attributes every time
+            self.converged = False
+            self.best_metric = -np.inf
+            self.patience_counter = 0
+            self.results_dict = {}  
+        
+            for n_components in range(1, self.max_components+1):
+                if self.fixed_components:
+                    if n_components < self.fixed_components_number:
+                        continue  
+                    else:
+                        self.converged = True
+                current_results_dict = CrossValidation(n_components=n_components, n_folds=self.n_folds, 
+                                                       max_iter=self.max_iter, init_type=self.init_type, 
+                                                       n_inits=self.n_inits, tol=self.tol, 
+                                                       reg_covar=self.reg_covar).fit(current_latents)
+                self.results_dict[n_components] = current_results_dict
+                if not self.converged:
+                    self.metric = self._select_best_metric(n_components=n_components)
+                    self._check_convergence(n_components=n_components)
+
+                if self.converged:
+                    best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components,                                                                                                       fixed_components=self.fixed_components,
+                                                                                            patience=self.patience)
+                    # save the best parameters for the current GMM category, and collect all of them before proceeding
+                    self.category_best_params.append({'w': w_init, 'm': m_init, 'p': p_init, 
+                                                 'bc': best_components, 'seed': best_seed})                    
+                    break
+
+        if self.verbose:
+            print(f'Found best parameters for all GMMs, now onto the MI estimation') 
+        if self.bootstrap:
+            MI_mean, MI_std = self._perform_bootstrap_categorical()
+        
+        return MI_mean, MI_std 
+        
