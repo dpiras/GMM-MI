@@ -13,7 +13,7 @@ In this folder we share notebooks with example use cases of GMM-MI, as well as t
 - [6_gamma_exp_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/6_gamma_exp_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators on a gamma-exponential distribution  with varying $\alpha$. Middle panel of Fig. 1 in the paper.
 - [7_weinman_exp_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/7_weinman_exp_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators on a Weinman exponential distribution with varying $\alpha$. Bottom panel of Fig. 1 in the paper.
 - [8_boostrap_comparison](https://github.com/dpiras/MI_estimation/blob/main/notebooks/8_boostrap_comparison.ipynb): comparison between GMM-MI, KSG and MINE estimators when performing bootstrap to obtain the full MI distribution on a bivariate Gaussian dataset. Fig. 3 in the paper.
-
+- [9_3D_shapes](https://github.com/dpiras/MI_estimation/blob/main/notebooks/9_3D_shapes.ipynb): calculation of MI between continuous and categorical variables, applied to the 3D shapes dataset. Fig. 4 in the paper.
 - [10_cosmology_IVE](https://github.com/dpiras/MI_estimation/blob/main/notebooks/10_cosmology_IVE.ipynb): comparison between GMM-MI and KDE on cosmological data coming from [Lucie-Smith et al. (2022)](https://journals.aps.org/prd/abstract/10.1103/PhysRevD.105.103533). Fig. 5 in the paper.
 
 

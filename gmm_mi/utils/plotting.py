@@ -1,7 +1,8 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def choose_ax(ax, figsize=(15, 10)):
     """Select panel where to plot. Normally returns the input panel; 
@@ -551,3 +552,137 @@ def plot_loss_curves(loss_curves, n_inits, n_folds, figsize=(20, 30),
             set_titles(ax, ylabel='logL', fontsize=20)
         set_ticksize(ax)        
     fig.subplots_adjust(wspace=0.0, hspace=0.0)
+
+
+def create_heatmap(data, row_labels, col_labels, fsize=30, ax=None,
+            cbar_kw={}, cbarlabel="", **kwargs):
+    """
+    Create a heatmap from a numpy array and two lists of labels.
+
+    Parameters
+    ----------
+    data : array-like of shape (n_rows, n_columns)
+        A 2D numpy array containing the data values that are reported.
+    row_labels : list
+        A list with the labels for the rows.
+    col_labels : list
+        A list with the labels for the columns.
+    ax : `matplotlib.axes.Axes` instance, default=None
+        The panel in which the heatmap is plotted. 
+        If not provided, use current axes or create a new one.
+    cbar_kw : dict, default={}
+        Contains the arguments to `matplotlib.Figure.colorbar`.
+    cbarlabel : string, default=""
+        The label for the colorbar.
+    **kwargs
+        All other arguments are forwarded to `imshow`.
+        
+    Returns
+    -------
+    im : AxesImage object
+        The output of `imshow`.
+    cbar : `colorbar` object
+        The colorbar.
+    """
+
+    ax = choose_ax(ax, figsize=(24, 8))
+       
+    # plot the heatmap
+    im = ax.imshow(data, **kwargs)
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.5)
+    # create colorbar
+    cbar = ax.figure.colorbar(im, ax=ax, cax=cax, **cbar_kw)
+    cbar.ax.tick_params(labelsize=20, length=10, width=2) 
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=25)
+
+    # show all ticks and label them with the respective list entries.
+    ax.set_xticks(np.arange(data.shape[1]))
+    ax.set_xticklabels(labels=col_labels, fontsize=fsize)
+    ax.set_yticks(np.arange(data.shape[0]))
+    ax.set_yticklabels(labels=row_labels, fontsize=fsize)
+
+    # set the horizontal axes labeling appear on top.
+    ax.tick_params(top=True, bottom=False,
+                   labeltop=True, labelbottom=False, length=10, width=2)
+
+    # Turn spines off and create white grid.
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)  
+    ax.set_xticks(np.arange(data.shape[1]+1)-.5, minor=True)
+    ax.set_yticks(np.arange(data.shape[0]+1)-.5, minor=True)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    return im, cbar
+
+
+def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
+                     textcolors=("black", "white"),
+                     threshold=None, save_fig=False,
+                     save_path="", **textkw):
+    """Used to annotate a previously-created heatmap.
+
+    Parameters
+    ----------
+    im : AxesImage
+        The image to be annotated.
+    data : array-like of shape (n_rows, n_columns)
+        Data used to annotate.  If None, the image's data is used.
+    valfmt : either str, or `matplotlib.ticker.Formatter`, default="{x:.2f}"
+        The format of the annotations inside the heatmap.  This should either
+        use the string format method, e.g. "$ {x:.2f}", or be a
+        `matplotlib.ticker.Formatter`.
+    textcolors : tuple, default=("black", "white")
+        A pair of colors.  The first is used for values below a threshold,
+        the second for those above.
+    threshold : float, default=None
+        Value in data units according to which the colors from textcolors are
+        applied.  If None (the default) uses the middle of the colormap as
+        separation.
+    save_fig : bool, default=False
+        Whether to save the annotated heatmap or not.
+    save_path : string, default=""
+        If save_fig is True, the path where to save the figure.
+    **kwargs
+        All other arguments are forwarded to each call to `text` used to create the text labels.
+        
+    Returns
+    -------
+    texts : list
+        Contains all the text that is annotated onto the heatmap
+    """
+
+    if not isinstance(data, (list, np.ndarray)):
+        data = im.get_array()
+        
+    # normalize the threshold to the images color range.
+    if threshold is not None:
+        threshold = im.norm(threshold)
+    else:
+        threshold = im.norm(data.max())/2.
+
+    # set default alignment to center, but allow it to be overwritten by textkw.
+    kw = dict(horizontalalignment="center",
+              verticalalignment="center")
+    kw.update(textkw)
+
+    # get the formatter in case a string is supplied
+    if isinstance(valfmt, str):
+        valfmt = matplotlib.ticker.StrMethodFormatter(valfmt)
+
+    # loop over the data and create a `Text` for each "pixel".
+    # change the text's color depending on the data.
+    texts = []
+    for i in range(data.shape[0]):
+        for j in range(data.shape[1]):
+            if data[i, j] < 0.01:
+                text = im.axes.text(j, i, matplotlib.ticker.StrMethodFormatter("{x:.0f}")(data[i, j], None), **kw) 
+            else:
+                text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
+            texts.append(text)
+            
+    if save_fig:
+        plt.savefig(save_path, bbox_inches='tight')
+    return texts
