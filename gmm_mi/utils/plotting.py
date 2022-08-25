@@ -651,7 +651,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     Returns
     -------
     texts : list
-        Contains all the text that is annotated onto the heatmap
+        Contains all the text that is annotated onto the heatmap.
     """
 
     if not isinstance(data, (list, np.ndarray)):
@@ -677,6 +677,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     texts = []
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
+            # ignore if value is too small
             if data[i, j] < 0.01:
                 text = im.axes.text(j, i, matplotlib.ticker.StrMethodFormatter("{x:.0f}")(data[i, j], None), **kw) 
             else:
