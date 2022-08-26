@@ -45,9 +45,9 @@ More example notebooks, including all results from the paper, are available in [
 ## Hyperparameter description
 
     n_folds : int, default=2
-    Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
-    As in every CV procedure, there is no best value. A good value, though, should ensure each fold has
-    enough samples to be representative of your training set.
+        Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
+        As in every CV procedure, there is no best value. A good value, though, should ensure each fold has
+        enough samples to be representative of your training set.
 
     n_inits : int, default=3
         Number of initializations used to find the best initialization parameters.
