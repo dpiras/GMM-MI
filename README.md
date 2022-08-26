@@ -54,27 +54,25 @@ More example notebooks, including all results from the paper, are available in [
         code slower.	
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-        Smaller values will increase the chances of singular matrices, but will have a smaller impact
-        on the final MI estimates.
+        Smaller values will increase the chances of singular matrices, but will have a smaller 
+        impact on the final MI estimates.
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
-        Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
-        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
+        Smaller values will improve the fit quality and reduce the chances of stopping at a local 
+        optimum, while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
     threshold_components : float, default=1e-5
         The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI stops 
         adding components either when the metric gets worse, or when the improvement in the metric value
-        is less than this threshold.
-        Smaller values ensure that enough components are considered and thus that the data distribution is 
-        correctly captured, while taking longer to converge and possibly insignificantly changing the 
-        final value of MI.
-    patience : int, default=1, 
+        is less than this threshold. Smaller values ensure that enough components are considered and 
+        thus that the data distribution is correctly captured, while taking longer to converge.
+    patience : int, default=1 
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
         with higher numbers of GMM components, while taking longer to converge.
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
-        will make the MI distribution more Gaussian-like, but the code will take longer.
+        will make the MI distribution more Gaussian-like, but will take longer.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         Higher values will return less noisy estimates of MI, but will take longer.
