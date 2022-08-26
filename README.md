@@ -45,25 +45,25 @@ More example notebooks, including all results from the paper, are available in [
 ## Hyperparameter description
 
     n_folds : int, default=2
-        Number of folds in the cross-validation (CV) performed to find the best initialization 
-        parameters. As in every CV procedure, there is no best value. A good value, though, 
+        Number of folds in the cross-validation (CV) performed to find the best initialization
+        parameters. As in every CV procedure, there is no best value. A good value, though,
         should ensure each fold has enough samples to be representative of your training set.
     n_inits : int, default=3
-        Number of initializations used to find the best initialization parameters. Higher 
-        values will decrease the chances of stopping at a local optimum, while making the 
-        code slower.	
+        Number of initializations used to find the best initialization parameters. Higher
+        values will decrease the chances of stopping at a local optimum, while making the
+        code slower.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-        Smaller values will increase the chances of singular matrices, but will have a smaller 
+        Smaller values will increase the chances of singular matrices, but will have a smaller
         impact on the final MI estimates.
     threshold_fit : float, default=1e-5
-        The log-likelihood threshold on each GMM fit used to choose when to stop training.
-        Smaller values will improve the fit quality and reduce the chances of stopping at a local 
-        optimum, while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
+        The log-likelihood threshold on each GMM fit used to choose when to stop training. Smaller
+        values will improve the fit quality and reduce the chances of stopping at a local optimum,
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.
     threshold_components : float, default=1e-5
-        The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI 
+        The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI
         stops adding components either when the metric gets worse, or when the improvement in the
-        metric value is less than this threshold. Smaller values ensure that enough components are 
+        metric value is less than this threshold. Smaller values ensure that enough components are
         considered and that the data distribution is correctly captured, while taking longer to converge.
     patience : int, default=1 
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
