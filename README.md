@@ -61,10 +61,10 @@ More example notebooks, including all results from the paper, are available in [
         Smaller values will improve the fit quality and reduce the chances of stopping at a local 
         optimum, while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
     threshold_components : float, default=1e-5
-        The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI stops 
-        adding components either when the metric gets worse, or when the improvement in the metric value
-        is less than this threshold. Smaller values ensure that enough components are considered and 
-        thus that the data distribution is correctly captured, while taking longer to converge.
+        The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI 
+        stops adding components either when the metric gets worse, or when the improvement in the
+        metric value is less than this threshold. Smaller values ensure that enough components are 
+        considered and that the data distribution is correctly captured, while taking longer to converge.
     patience : int, default=1 
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
