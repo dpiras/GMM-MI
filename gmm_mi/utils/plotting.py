@@ -237,8 +237,8 @@ def plot_samples(gmm, ax, N=1e4):
     
     
 def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8, 
-                  linewidth=4, fill=False, label='', scatter=True, 
-                  N=1e4, xlabel='X1', ylabel='X2'):
+                      linewidth=4, fill=False, label='', scatter=True, 
+                      scatter_data=None, N=1e4, xlabel='X1', ylabel='X2'):
     """Draw the contour ellipses corresponding to a given Gaussian mixture model (GMM),
     including a possible scatte plot of a required number of samples from the GMM.
     
@@ -262,6 +262,8 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8,
         The legend label to associate to the contours.
     scatter : bool, default=True
         Whether to also display a scatter plot with samples of the GMM.
+    scatter_data : array-like of shape (n_samples, 2), default=None
+        If provided, make a scatter plot of these data instead of data of the input GMM.
     N : int, default=1e4
         The number of samples to plot in the scatter plot.
     xlabel : string, default='X1'
@@ -274,13 +276,17 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8,
     None
     """
     ax = choose_ax(ax, figsize=(10, 10))
+    if scatter:
+        if type(scatter_data) is np.ndarray:
+            ax.scatter(scatter_data[:, 0], scatter_data[:, 1], label='Input data')
+        else:
+            plot_samples(gmm=gmm, ax=ax, N=N)
+            
     means, covariances, weights = gmm.means_, gmm.covariances_, gmm.weights_
     for component_count, (mean, covariance, weight) in enumerate(zip(means, covariances, weights)):
         draw_ellipse(mean, covariance, weight, ax=ax, alpha=alpha, fill=fill, 
                      color=color,ls=ls, linewidth=linewidth, label=label, component_count=component_count)  
-    if scatter:
-        plot_samples(gmm=gmm, ax=ax, N=N)
-        
+
     set_ticksize(ax)
     set_titles(ax, xlabel=xlabel, ylabel=ylabel)
 

@@ -3,7 +3,6 @@
 Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is computationally efficient and fully in python. You can read more about GMM-MI [in our paper](https://www.overleaf.com/project/62920145c884448df7e9745c) (the link will be to the actual paper once submitted). Please [cite it](#citation) if you use it in your work!
 
 Current missing features include:
-- add plotting of fitted model on top of data
 - add threshold in step 4
 - make sure the parameter naming is clear, and explain them in the README
 - make console messages more informative
@@ -36,9 +35,13 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     rng = np.random.default_rng(0)
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
-    MI_mean, MI_std = EstimateMI().fit(X)
+    MIEstimator = EstimateMI()
+    MI_mean, MI_std = MIEstimator.fit(X)
 
-This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats.
+This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats. If you want to visualize the fitted model over your input data, you can run:
+    
+    MIEstimator.plot_fitted_model()
+
 More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
 
 ## Contributing and contacts

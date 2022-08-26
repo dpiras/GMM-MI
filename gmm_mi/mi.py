@@ -310,6 +310,14 @@ class EstimateMI:
                 best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components,    
                                                                                                   fixed_components=self.fixed_components,
                                                                                                   patience=self.patience)
+                # these are assigned to self only to possibly plot the final model
+                # in `plot_fitted_model`.
+                self.best_components = best_components
+                self.best_seed = best_seed
+                self.w_init = w_init
+                self.m_init = m_init
+                self.p_init = p_init
+                
                 if self.verbose:
                     print(f'Convergence reached at {best_components} components') 
                 if self.bootstrap:
@@ -329,6 +337,23 @@ class EstimateMI:
         else:
             return MI_mean, MI_std    
  
+    def plot_fitted_model(self):
+        """Plot contours of fitted model over input data.
+        Only works if the model has been fitted successfully first.
+        
+        Returns
+        -------
+        None
+        """
+        assert self.converged == True, "You can only plot the fitted model after MI has "\
+                                       "been estimated; call .fit() on your data first!"
+        from gmm_mi.utils.plotting import plot_gmm_contours
+        gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
+                 tol=self.tol, random_state=self.best_seed, max_iter=self.max_iter, 
+                 w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
+        plot_gmm_contours(gmm, ls='-', label='Fitted model',
+                          scatter_data=self.X)
+               
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
         Use only Monte Carlo (MC) method. 
