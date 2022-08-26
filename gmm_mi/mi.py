@@ -14,22 +14,29 @@ class EstimateMI:
         A good value should ensure each fold has enough samples to be representative of your training set.
     n_inits : int, default=3
         Number of initializations used to find the best initialization parameters.
-        A higher value will decrease the chances of stopping at a local optimum, while making the code slower.
+        Higher values will decrease the chances of stopping at a local optimum, while making the code slower.
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-        A smaller value will increase the chances of singular matrices, but will have a smaller impact
+        Smaller values will increase the chances of singular matrices, but will have a smaller impact
         on the final MI estimates.
-    tol : float, default=1e-5
+    threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
-        A smaller value will improve the fit quality and reduce the chances of stopping at a local optimum,
-        while making the code considerably slower.
+        Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
     max_iter : int, default=10000
-        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
+        The maximum number of iterations in each GMM fit. We aim to stop only based on `threshold_fit`, 
         so it is set to a high value. A warning is raised if this threshold is reached; in that case, 
-        simply increase this value, or check that you really need such a small `tol` value.
+        simply increase this value, or check that you really need such a small `threshold_fit` value.
+    threshold_components : float, default=1e-5
+        The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI stops 
+        adding components either when the metric gets worse, or when the improvement in the metric value
+        is less than this threshold.
+        Smaller values ensure that enough components are considered and thus that the data distribution is 
+        correctly captured, while taking longer to converge and possibly insignificantly changing the 
+        final value of MI.
     max_components : int, default=50
         Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.
         A warning is raised if this number of components is used; if so, you might want to use a different
@@ -40,17 +47,17 @@ class EstimateMI:
             'valid': stop adding components when the validation log-likelihood stops increasing.
             'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing.
             'bic': same as 'aic' but with the Bayesian information criterion (BIC).
-    patience : int, default=1, 
+    patience : int, default=1
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
-        Same concept as patience when training a neural network. A higher value will fit models
-        with higher numbers of GMM components, so try to keep it low to make the code more efficient.
+        Same concept as patience when training a neural network. Higher value will fit models
+        with higher numbers of GMM components, while taking longer to converge.
     bootstrap : bool, default=True, 
         Whether to perform bootstrap or not to get the uncertainty on MI. 
-        If False, only a single value of MI is returned.
+        If False, only a single value of MI is returned, without error bar.
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
-        A higher value will return a better estimate of the MI uncertainty, and
-        the MI distribution will be more Gaussian-like, but it will take longer.
+        Higher values will return a better estimate of the MI uncertainty, and
+        will make the MI distribution more Gaussian-like, but the code will take longer.
     fixed_components_number : int, default=0
         The number of GMM components to use. If 0 (default), will do cross-validation to select 
         the number of components, and ignore this. Else, use this specified number of components,
@@ -61,7 +68,7 @@ class EstimateMI:
             'quad': use quadrature integration, as implemented in scipy, with default parameters.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
-        A higher value will return less noisy estimates of MI, but will take longer.
+        Higher values will return less noisy estimates of MI, but will take longer.
     return_lcurves : bool, default=False
         Whether to return the loss curves or not (for debugging purposes).
     verbose : bool, default=False
@@ -82,15 +89,17 @@ class EstimateMI:
         Set to True only if the user fixes a number of GMM components > 0.
     """
     def __init__(self, n_folds=2, n_inits=3, init_type='random_sklearn', reg_covar=1e-15, 
-                 tol=1e-5, max_iter=10000, max_components=100, metric_method='valid', 
-                 patience=1, bootstrap=True, n_bootstrap=50, fixed_components_number=0, 
+                 threshold_fit=1e-5, max_iter=10000, threshold_components=1e-5, max_components=100, 
+                 metric_method='valid', patience=1, bootstrap=True, n_bootstrap=50, fixed_components_number=0, 
                  MI_method='MC', MC_samples=1e5, return_lcurves=False, verbose=False): 
         self.n_folds = n_folds
         self.n_inits = n_inits
         self.init_type = init_type
         self.reg_covar = reg_covar
-        self.tol = tol
+        self.threshold_fit = threshold_fit
         self.max_iter = max_iter
+        assert threshold_components > 0, f"`threshold_components` must be a positive number, found '{threshold_components}'"
+        self.threshold_components = threshold_components
         self.max_components = max_components
         assert metric_method == 'valid' or metric_method == 'aic' or metric_method == 'bic', f"metric_method must be either 'valid', 'aic' or 'bic, found '{metric_method}'"
         self.metric_method = metric_method
@@ -129,7 +138,7 @@ class EstimateMI:
                                                                    fixed_components=False, 
                                                                    patience=0)
             gmm = single_fit(X=self.X, n_components=n_components, reg_covar=self.reg_covar, 
-                             tol=self.tol, max_iter=self.max_iter, 
+                             threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
                              w_init=w_init, m_init=m_init, p_init=p_init)                
             if self.metric_method == 'aic':
                 # negative since we maximise the metric
@@ -185,20 +194,22 @@ class EstimateMI:
 
     def _check_convergence(self, n_components):
         """Check if convergence with respect to the number of components has been reached.
+        Convergence is declared when the metric has not improved, or when the improvement is
+        less than the specified `threshold_components`.
 
         Parameters
         ----------
         n_components : int
             Number of GMM components being fitted. 
         """    
-        if self.metric > self.best_metric:
+        if self.metric - self.best_metric > self.threshold_components:
             self.best_metric = self.metric
             if self.verbose:
-                print(f'Current components: {n_components}. Current metric: {self.best_metric:.3f}. Adding one component...')
+                print(f'Current number of GMM components: {n_components}. Current metric: {self.best_metric:.3f}. Adding one component...')
         else:
             self.patience_counter += 1
             if self.verbose:
-                print(f'Metric did not improve; patience counter increased by 1.')
+                print(f'Metric did not improve, or improvement was less than threshold; patience counter increased by 1...')
             if self.patience_counter >= self.patience:
                 if self.verbose:
                     print(f'Reached patience limit, stop adding components.')
@@ -260,8 +271,8 @@ class EstimateMI:
             rng = np.random.default_rng(n_b)
             X_bs = rng.choice(self.X, self.X.shape[0])
             gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
-                             tol=self.tol, max_iter=self.max_iter, random_state=random_state, 
-                             w_init=w_init, m_init=m_init, p_init=p_init)
+                             threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
+                             random_state=random_state, w_init=w_init, m_init=m_init, p_init=p_init)
             current_MI_estimate = self._calculate_MI(gmm)
             MI_estimates[n_b] = current_MI_estimate
         MI_mean = np.mean(MI_estimates)
@@ -290,7 +301,9 @@ class EstimateMI:
             Only returned if return_lcurves is true.
         """
         assert X.shape[1] == 2, f"The shape of the data must be (n_samples, 2), found {X.shape}"    
-        self.X = X          
+        self.X = X
+        if self.verbose:
+            print('Starting cross-validation procedure to select the number of GMM components...')
         for n_components in range(1, self.max_components+1):
             if self.fixed_components:
                 if n_components < self.fixed_components_number:
@@ -299,7 +312,7 @@ class EstimateMI:
                     self.converged = True
             current_results_dict = CrossValidation(n_components=n_components, n_folds=self.n_folds, 
                                                    max_iter=self.max_iter, init_type=self.init_type, 
-                                                   n_inits=self.n_inits, tol=self.tol, 
+                                                   n_inits=self.n_inits, threshold_fit=self.threshold_fit, 
                                                    reg_covar=self.reg_covar).fit(self.X)
             self.results_dict[n_components] = current_results_dict
             if not self.converged:
@@ -319,19 +332,21 @@ class EstimateMI:
                 self.p_init = p_init
                 
                 if self.verbose:
-                    print(f'Convergence reached at {best_components} components') 
+                    print(f'Done. Convergence reached at {best_components} components.') 
+                    print(f'Starting MI integral estimation...') 
                 if self.bootstrap:
                     MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
                                                              w_init=w_init, m_init=m_init, p_init=p_init)
                 else:
-                    # only now while debugging, we perform a single fit on the entire dataset
                     gmm = single_fit(X=self.X, n_components=best_components, reg_covar=self.reg_covar, 
-                                     tol=self.tol, random_state=best_seed, max_iter=self.max_iter, 
+                                     threshold_fit=self.threshold_fit, random_state=best_seed, max_iter=self.max_iter, 
                                      w_init=w_init, m_init=m_init, p_init=p_init)
                     MI_mean = self._calculate_MI(gmm)
                     MI_std = None
                 break
 
+        if self.verbose:
+            print('MI estimation completed, returning mean and standard deviation.')
         if self.return_lcurves:
             return MI_mean, MI_std, self.lcurves        
         else:
@@ -349,7 +364,7 @@ class EstimateMI:
                                        "been estimated; call .fit() on your data first!"
         from gmm_mi.utils.plotting import plot_gmm_contours
         gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
-                 tol=self.tol, random_state=self.best_seed, max_iter=self.max_iter, 
+                 threshold_fit=self.threshold_fit, random_state=self.best_seed, max_iter=self.max_iter, 
                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
         plot_gmm_contours(gmm, ls='-', label='Fitted model',
                           scatter_data=self.X)
@@ -411,7 +426,7 @@ class EstimateMI:
                 if not self.bootstrap:
                     X_bs = current_latents 
                 gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
-                                 tol=self.tol, max_iter=self.max_iter, random_state=random_state, 
+                                 threshold_fit=self.threshold_fit, max_iter=self.max_iter, random_state=random_state, 
                                  w_init=w_init, m_init=m_init, p_init=p_init)               
                 self.all_gmms.append(gmm)
             MI_estimates[n_b] = self._calculate_MI_categorical()
@@ -470,7 +485,7 @@ class EstimateMI:
                         self.converged = True
                 current_results_dict = CrossValidation(n_components=n_components, n_folds=self.n_folds, 
                                                        max_iter=self.max_iter, init_type=self.init_type, 
-                                                       n_inits=self.n_inits, tol=self.tol, 
+                                                       n_inits=self.n_inits, threshold_fit=self.threshold_fit, 
                                                        reg_covar=self.reg_covar).fit(current_latents)
                 self.results_dict[n_components] = current_results_dict
                 if not self.converged:

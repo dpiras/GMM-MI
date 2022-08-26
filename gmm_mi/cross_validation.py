@@ -22,20 +22,23 @@ class CrossValidation:
         See utils.initializations for more details.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
-    tol : float, default=1e-5
+    threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
+        Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
     max_iter : int, default=10000
-        The maximum number of iterations in each GMM fit. We aim to stop only based on the tolerance, 
-        so it is set to a high value.    
+        The maximum number of iterations in each GMM fit. We aim to stop only based on `threshold_fit`, 
+        so it is set to a high value. A warning is raised if this threshold is reached; in that case, 
+        simply increase this value, or check that you really need such a small `threshold_fit` value.
     """
     def __init__(self, n_components, n_folds=2, n_inits=3, init_type='random_sklearn', 
-                 reg_covar=1e-15, tol=1e-5, max_iter=10000):
+                 reg_covar=1e-15, threshold_fit=1e-5, max_iter=10000):
         self.n_components = n_components
         self.n_folds = n_folds
         self.n_inits = n_inits
         self.init_type = init_type
         self.reg_covar = reg_covar
-        self.tol = tol
+        self.threshold_fit = threshold_fit
         self.max_iter = max_iter
         
     def _create_containers(self):
@@ -69,7 +72,7 @@ class CrossValidation:
                 X_training = X[train_indices]
                 X_validation = X[valid_indices]            
                 gmm = single_fit(X=X_training, n_components=self.n_components, reg_covar=self.reg_covar, 
-                                 tol=self.tol, max_iter=self.max_iter, random_state=random_state, 
+                                 threshold_fit=self.threshold_fit, max_iter=self.max_iter, random_state=random_state, 
                                  w_init=w_init, m_init=m_init, p_init=p_init, val_set=X_validation)
                 # we take the mean logL per sample, since folds might have slightly different sizes
                 val_score = gmm.score_samples(X_validation).mean()            

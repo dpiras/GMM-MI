@@ -23,6 +23,10 @@ class GMM(GMM):
     
     Parameters
     ----------
+    threshold_fit : float, default=1e-5
+        The log-likelihood threshold on each GMM fit used to choose when to stop training.
+        Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.
     weights_init : array-like of shape (n_components, ), default=np.array([1.])
         The user-provided initial weights.
         If it is None, a single weight is initialized as 1.
@@ -75,8 +79,8 @@ class GMM(GMM):
     def __init__(self,
                  n_components=1,
                  covariance_type="full",
-                 tol=1e-3,
-                 reg_covar=1e-6,
+                 threshold_fit=1e-5, # this has replaced `tol`
+                 reg_covar=1e-15,
                  max_iter=100,
                  random_state=None,
                  warm_start=False,
@@ -89,7 +93,6 @@ class GMM(GMM):
                  ):
         super(GMM, self).__init__(n_components=n_components,
                  covariance_type=covariance_type,
-                 tol=tol,
                  reg_covar=reg_covar,
                  max_iter=max_iter,
                  random_state=random_state,
@@ -111,6 +114,7 @@ class GMM(GMM):
         self.precisions_cholesky_ = _compute_precision_cholesky(
                 self.covariances_, self.covariance_type
             )
+        self.threshold_fit = threshold_fit
 
     def score_samples(self, X):
         """Compute the log-likelihood of each sample. Removed check_is_fitted function.
@@ -271,7 +275,7 @@ class GMM(GMM):
         which the model has the largest likelihood. Within each
         trial, the method iterates between E-step and M-step for `max_iter`
         times until the change of likelihood or lower bound is less than
-        `tol`, otherwise, a :class:`~sklearn.exceptions.ConvergenceWarning` is
+        `threshold_fit`, otherwise, a :class:`~sklearn.exceptions.ConvergenceWarning` is
         raised.
         Unlike the sklearn class, we fit only once and deal with the multiple initialisations elsewhere.
         We add the possibility of recording the log-likelihood on the validation set, if provided.
@@ -334,7 +338,7 @@ class GMM(GMM):
                     self.train_loss.append(log_prob_norm_train)
                     self.val_loss.append(log_prob_norm_val)
 
-                if abs(change) < self.tol:
+                if abs(change) < self.threshold_fit:
                     self.converged_ = True
                     break
 
@@ -349,7 +353,7 @@ class GMM(GMM):
             warnings.warn(
                 "Initialization %d did not converge. "
                 "Try different init parameters, "
-                "or increase max_iter, tol "
+                "or increase max_iter, threshold_fit "
                 "or check for degenerate data." % (init + 1),
                 ConvergenceWarning,
             )
@@ -360,7 +364,7 @@ class GMM(GMM):
 
         # Always do a final e-step to guarantee that the labels returned by
         # fit_predict(X) are always consistent with fit(X).predict(X)
-        # for any value of max_iter and tol (and any random_state).
+        # for any value of max_iter and threshold_fit (and any random_state).
         _, log_resp = self._e_step(X)
         return log_resp.argmax(axis=1)
 
