@@ -33,8 +33,8 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     rng = np.random.default_rng(0)
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
-    MIEstimator = EstimateMI()
-    MI_mean, MI_std = MIEstimator.fit(X)
+    mi_estimator = EstimateMI()
+    MI_mean, MI_std = mi_estimator.fit(X)
 
 This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats. If you want to visualize the fitted model over your input data, you can run:
     
@@ -73,6 +73,8 @@ More example notebooks, including all results from the paper, are available in [
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
         will make the MI distribution more Gaussian-like, but will take longer.
+        If less than 1, do not perform bootstrap and actually just do a single 
+        fit on the entire datase; there will be no MI uncertainty in this case.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         Higher values will return less noisy estimates of MI, but will take longer.

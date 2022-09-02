@@ -51,13 +51,11 @@ class EstimateMI:
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
         with higher numbers of GMM components, while taking longer to converge.
-    bootstrap : bool, default=True, 
-        Whether to perform bootstrap or not to get the uncertainty on MI. 
-        If False, only a single value of MI is returned, without error bar.
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
         will make the MI distribution more Gaussian-like, but the code will take longer.
+        If < 1, do not perform bootstrap and actually just do a single fit on the entire dataset.
     fixed_components_number : int, default=0
         The number of GMM components to use. If 0 (default), will do cross-validation to select 
         the number of components, and ignore this. Else, use this specified number of components,
@@ -90,7 +88,7 @@ class EstimateMI:
     """
     def __init__(self, n_folds=2, n_inits=3, init_type='random_sklearn', reg_covar=1e-15, 
                  threshold_fit=1e-5, max_iter=10000, threshold_components=1e-5, max_components=100, 
-                 metric_method='valid', patience=1, bootstrap=True, n_bootstrap=50, fixed_components_number=0, 
+                 metric_method='valid', patience=1, n_bootstrap=50, fixed_components_number=0, 
                  MI_method='MC', MC_samples=1e5, return_lcurves=False, verbose=False): 
         self.n_folds = n_folds
         self.n_inits = n_inits
@@ -105,7 +103,6 @@ class EstimateMI:
         self.metric_method = metric_method
         assert patience >= 1, f"patience should be at least 1, found {patience}."
         self.patience = patience
-        self.bootstrap = bootstrap
         self.n_bootstrap = n_bootstrap
         self.fixed_components_number = fixed_components_number
         self.fixed_components = True if self.fixed_components_number > 0 else False
@@ -242,7 +239,8 @@ class EstimateMI:
         return MI
 
     def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init):
-        """Perform bootstrap on the given data to calculate the distribution of mutual information (MI).
+        """Perform bootstrap on the given data to calculate the distribution of mutual information (MI)
+        in the continuous-continuous case. If n_bootstrap < 1, do only a single fit on the entire dataset.
 
         Parameters
         ----------
@@ -264,19 +262,27 @@ class EstimateMI:
             Mean of the MI distribution.
         MI_std : float
             Standard deviation of the MI distribution.
-        """  
+        """ 
+        if self.n_bootstrap < 1:
+            do_bootstrap = False
+            self.n_bootstrap = 1 # we will use only one dataset, i.e. all data
+        else:
+            do_bootstrap = True
         MI_estimates = np.zeros(self.n_bootstrap)
         for n_b in range(self.n_bootstrap):
-            # we use index n_b to change the seed so that results will be fully reproducible
-            rng = np.random.default_rng(n_b)
-            X_bs = rng.choice(self.X, self.X.shape[0])
+            if do_bootstrap:
+                # we use index n_b to change the seed so that results will be fully reproducible
+                rng = np.random.default_rng(n_b)
+                X_bs = rng.choice(self.X, self.X.shape[0])
+            else:
+                X_bs = self.X
             gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
                              threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
                              random_state=random_state, w_init=w_init, m_init=m_init, p_init=p_init)
             current_MI_estimate = self._calculate_MI(gmm)
             MI_estimates[n_b] = current_MI_estimate
         MI_mean = np.mean(MI_estimates)
-        MI_std = np.sqrt(np.var(MI_estimates, ddof=1))
+        MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
 
     def fit(self, X):
@@ -334,15 +340,10 @@ class EstimateMI:
                 if self.verbose:
                     print(f'Done. Convergence reached at {best_components} components.') 
                     print(f'Starting MI integral estimation...') 
-                if self.bootstrap:
-                    MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
+                
+                # get MI distribution
+                MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
                                                              w_init=w_init, m_init=m_init, p_init=p_init)
-                else:
-                    gmm = single_fit(X=self.X, n_components=best_components, reg_covar=self.reg_covar, 
-                                     threshold_fit=self.threshold_fit, random_state=best_seed, max_iter=self.max_iter, 
-                                     w_init=w_init, m_init=m_init, p_init=p_init)
-                    MI_mean = self._calculate_MI(gmm)
-                    MI_std = None
                 break
 
         if self.verbose:
@@ -393,8 +394,7 @@ class EstimateMI:
      
     def _perform_bootstrap_categorical(self):
         """Perform bootstrap on the given data to calculate the distribution of mutual information (MI),
-        in the categorical-continuous case. If bootstrap is not requested, do only a single fit on 
-        the entire dataset.
+        in the categorical-continuous case. If n_bootstrap < 1, do only a single fit on the entire dataset.
 
         Returns
         ----------
@@ -403,16 +403,16 @@ class EstimateMI:
         MI_std : float
             Standard deviation of the MI distribution. None if bootstrap==False.
         """  
-        if not self.bootstrap:
-            self.n_bootstrap = 1
+        if self.n_bootstrap < 1:
+            do_bootstrap = False
+            self.n_bootstrap = 1 # we will use only one dataset, i.e. all data
+        else:
+            do_bootstrap = True
         MI_estimates = np.zeros(self.n_bootstrap)
-        for n_b in range(self.n_bootstrap):
-            # we use index n_b to change the seed so that results will be fully reproducible
-            rng = np.random.default_rng(n_b)
-            
+        for n_b in range(self.n_bootstrap):            
             # to store the fitted GMM models for each category value
             self.all_gmms = []
-            for category_value in range(self.category_values):   
+            for category_value in range(self.category_values):
                 current_ids = np.where(self.y == category_value)
                 # we select the relevant latents again
                 current_latents = self.X[current_ids]
@@ -422,8 +422,11 @@ class EstimateMI:
                 m_init = self.category_best_params[category_value]['m']
                 p_init = self.category_best_params[category_value]['p']
                 random_state = self.category_best_params[category_value]['seed']
-                X_bs = rng.choice(current_latents, current_latents.shape[0])
-                if not self.bootstrap:
+                if do_bootstrap:
+                    # we use index n_b to change the seed so that results will be fully reproducible
+                    rng = np.random.default_rng(n_b)
+                    X_bs = rng.choice(current_latents, current_latents.shape[0])
+                else:
                     X_bs = current_latents 
                 gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
                                  threshold_fit=self.threshold_fit, max_iter=self.max_iter, random_state=random_state, 
@@ -432,7 +435,7 @@ class EstimateMI:
             MI_estimates[n_b] = self._calculate_MI_categorical()
 
         MI_mean = np.mean(MI_estimates)
-        MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if self.bootstrap else None
+        MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
        
     def fit_categorical(self, X, y):
@@ -502,8 +505,9 @@ class EstimateMI:
 
         if self.verbose:
             print(f'Found best parameters for all GMMs, now onto the MI estimation') 
-        if self.bootstrap:
-            MI_mean, MI_std = self._perform_bootstrap_categorical()
+        
+        # get MI distribution
+        MI_mean, MI_std = self._perform_bootstrap_categorical()
         
         return MI_mean, MI_std 
         
