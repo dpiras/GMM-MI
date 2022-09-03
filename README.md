@@ -20,7 +20,7 @@ We will make the package `pip` installable once we make the repository public, a
 
 ## Usage
 
-To use GMM-MI, you simply need to import the class EstimateMI, choose the hyperparameters and fit it to your data. You can find an example below. A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L6), and we discuss a few of them [below](#hyperparameter-description).
+To use GMM-MI, you simply need to import the class EstimateMI, choose the hyperparameters and fit it to your data. You can find an example below. A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L7), and we discuss a few of them [below](#hyperparameter-description).
 
 ## Example
 
@@ -43,6 +43,7 @@ This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value 
 More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
 
 ## Hyperparameter description
+Here we discuss the most important hyperparameters that are used in GMM-MI.
 
     n_folds : int, default=2
         Number of folds in the cross-validation (CV) performed to find the best initialization

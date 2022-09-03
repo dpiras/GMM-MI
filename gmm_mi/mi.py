@@ -1,35 +1,46 @@
 import numpy as np
 from gmm_mi.cross_validation import CrossValidation
 from gmm_mi.single_fit import single_fit
+from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
 
 
 class EstimateMI:
     """Class to calculate mutual information (MI) distribution on 2D data, using Gaussian mixture models (GMMs).
-    The main method is `fit`.
+    The main method is `fit` for continuous data, and `fit_categorical` for continuous-categorical data.
+    The constructor parameters are mostly inherited from three classes: GMMFitParamHolder, and MIDistParamHolder
 
     Parameters
     ----------
-    n_folds : int, default=2
-        Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
-        A good value should ensure each fold has enough samples to be representative of your training set.
-    n_inits : int, default=3
-        Number of initializations used to find the best initialization parameters.
-        Higher values will decrease the chances of stopping at a local optimum, while making the code slower.
+    (inherited from GMMFitParamHolder, passed as gmm_fit_params)
     init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
         See utils.initializations for more details.
-    reg_covar : float, default=1e-15
-        The constant term added to the diagonal of the covariance matrices to avoid singularities.
-        Smaller values will increase the chances of singular matrices, but will have a smaller impact
-        on the final MI estimates.
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
         Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
-        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.       
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.      
+    reg_covar : float, default=1e-15
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
+        Smaller values will increase the chances of singular matrices, but will have a smaller impact
+        on the final MI estimates. 
     max_iter : int, default=10000
         The maximum number of iterations in each GMM fit. We aim to stop only based on `threshold_fit`, 
         so it is set to a high value. A warning is raised if this threshold is reached; in that case, 
         simply increase this value, or check that you really need such a small `threshold_fit` value.
+        
+    (inherited from ChooseComponentParamHolder, passed as select_component_params)    
+    n_inits : int, default=3
+        Number of initializations used to find the best initialization parameters.
+        Higher values will decrease the chances of stopping at a local optimum, while making the code slower.
+    n_folds : int, default=2
+        Number of folds in the cross-validation (CV) performed to find the best initialization parameters.
+        A good value should ensure each fold has enough samples to be representative of your training set.
+    metric_method : {'valid', 'aic', 'bic'}, default='valid'
+        Metric used to select the optimal number of GMM components to perform density estimation.
+        Must be one of:
+            'valid': stop adding components when the validation log-likelihood stops increasing.
+            'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing.
+            'bic': same as 'aic' but with the Bayesian information criterion (BIC).
     threshold_components : float, default=1e-5
         The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI stops 
         adding components either when the metric gets worse, or when the improvement in the metric value
@@ -37,29 +48,21 @@ class EstimateMI:
         Smaller values ensure that enough components are considered and thus that the data distribution is 
         correctly captured, while taking longer to converge and possibly insignificantly changing the 
         final value of MI.
+    patience : int, default=1
+        Number of extra components to "wait" until convergence is declared. Must be at least 1.
+        Same concept as patience when training a neural network. Higher value will fit models
+        with higher numbers of GMM components, while taking longer to converge.        
     max_components : int, default=50
         Maximum number of GMM components that is going to be tested. Hopefully stop much earlier than this.
         A warning is raised if this number of components is used; if so, you might want to use a different
         `metric_method`.
-    metric_method : {'valid', 'aic', 'bic'}, default='valid'
-        Metric used to select the optimal number of GMM components to perform density estimation.
-        Must be one of:
-            'valid': stop adding components when the validation log-likelihood stops increasing.
-            'aic': stop adding components when the Akaike information criterion (AIC) stops decreasing.
-            'bic': same as 'aic' but with the Bayesian information criterion (BIC).
-    patience : int, default=1
-        Number of extra components to "wait" until convergence is declared. Must be at least 1.
-        Same concept as patience when training a neural network. Higher value will fit models
-        with higher numbers of GMM components, while taking longer to converge.
+        
+    (inherited from GMMFitParamHolder, passed as mi_dist_params)            
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
         will make the MI distribution more Gaussian-like, but the code will take longer.
         If < 1, do not perform bootstrap and actually just do a single fit on the entire dataset.
-    fixed_components_number : int, default=0
-        The number of GMM components to use. If 0 (default), will do cross-validation to select 
-        the number of components, and ignore this. Else, use this specified number of components,
-        and ignore cross-validation.
     MI_method : {'MC', 'quad'}, default='MC' 
         Method to calculate the MI integral. Must be one of:
             'MC': use Monte Carlo integration with MC_samples samples.
@@ -67,6 +70,12 @@ class EstimateMI:
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         Higher values will return less noisy estimates of MI, but will take longer.
+    fixed_components_number : int, default=0
+        The number of GMM components to use. If 0 (default), will do cross-validation to select 
+        the number of components, and ignore this. Else, use this specified number of components,
+        and ignore cross-validation.
+        
+    (not inherited)
     return_lcurves : bool, default=False
         Whether to return the loss curves or not (for debugging purposes).
     verbose : bool, default=False
@@ -86,28 +95,12 @@ class EstimateMI:
     fixed_components : bool
         Set to True only if the user fixes a number of GMM components > 0.
     """
-    def __init__(self, n_folds=2, n_inits=3, init_type='random_sklearn', reg_covar=1e-15, 
-                 threshold_fit=1e-5, max_iter=10000, threshold_components=1e-5, max_components=100, 
-                 metric_method='valid', patience=1, n_bootstrap=50, fixed_components_number=0, 
-                 MI_method='MC', MC_samples=1e5, return_lcurves=False, verbose=False): 
-        self.n_folds = n_folds
-        self.n_inits = n_inits
-        self.init_type = init_type
-        self.reg_covar = reg_covar
-        self.threshold_fit = threshold_fit
-        self.max_iter = max_iter
-        assert threshold_components > 0, f"`threshold_components` must be a positive number, found '{threshold_components}'"
-        self.threshold_components = threshold_components
-        self.max_components = max_components
-        assert metric_method == 'valid' or metric_method == 'aic' or metric_method == 'bic', f"metric_method must be either 'valid', 'aic' or 'bic, found '{metric_method}'"
-        self.metric_method = metric_method
-        assert patience >= 1, f"patience should be at least 1, found {patience}."
-        self.patience = patience
-        self.n_bootstrap = n_bootstrap
-        self.fixed_components_number = fixed_components_number
-        self.fixed_components = True if self.fixed_components_number > 0 else False
-        self.MI_method = MI_method
-        self.MC_samples = MC_samples
+    def __init__(self, gmm_fit_params=None, select_components_params=None, mi_dist_params=None, 
+                 return_lcurves=False, verbose=False): 
+        self.gmm_fit_params = gmm_fit_params if gmm_fit_params else GMMFitParamHolder()
+        self.sel_comp_params = select_components_params if select_components_params else SelectComponentsParamHolder()
+        self.mi_dist_params = mi_dist_params if mi_dist_params else MIDistParamHolder()
+       
         self.return_lcurves = return_lcurves
         self.verbose = verbose
 
@@ -115,7 +108,22 @@ class EstimateMI:
         self.best_metric = -np.inf
         self.patience_counter = 0
         self.results_dict = {}    
-        
+    
+    def __getattr__(self, attr):
+        """Access all hyperparameter classes methods and attributes."""
+        try:
+            return getattr(self.gmm_fit_params, attr)
+        except:
+            pass
+        try:
+            return getattr(self.sel_comp_params, attr)
+        except:
+            pass
+        try:
+            return getattr(self.mi_dist_params, attr)
+        except:
+            pass
+    
     def _select_best_metric(self, n_components):
         """Select best metric to choose the number of GMM components.
 
