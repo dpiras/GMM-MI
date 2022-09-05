@@ -2,9 +2,8 @@
 
 Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://www.overleaf.com/project/62920145c884448df7e9745c) (the link will be to the actual paper once submitted). Please [cite it](#citation) if you use it in your work!
 
-Current missing features include:
+Current possible extensions include:
 - can we make it faster with some form of parallelisation? especially CV!
-- reflect recent code changes in the paper draft
 
 ## Installation
 
