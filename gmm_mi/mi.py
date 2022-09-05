@@ -346,7 +346,7 @@ class EstimateMI:
                 self.p_init = p_init
                 
                 if self.verbose:
-                    print(f'Done. Convergence reached at {best_components} components.') 
+                    print(f'Convergence reached at {best_components} GMM components.') 
                     print(f'Starting MI integral estimation...') 
                 
                 # get MI distribution

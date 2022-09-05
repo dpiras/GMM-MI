@@ -1,5 +1,5 @@
 import numpy as np
-from gmm_mi.gmm import GMM
+from gmm_mi.gmm import GMMWithMI as GMM
 random_state = 13
 
 # We define a few different synthetic GMM models, with different components,
