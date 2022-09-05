@@ -38,9 +38,25 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
 
 This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats. If you want to visualize the fitted model over your input data, you can run:
     
-    MIEstimator.plot_fitted_model()
+    mi_estimator.plot_fitted_model()
 
-To choose the hyperparameters, we provide three classes: More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
+To choose the hyperparameters, we provide three classes: `GMMFitParamHolder, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example usage is as follows:
+
+    from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
+
+    # parameters for every GMM fit that is being run
+    gmm_fit_params = GMMFitParamHolder(threshold_fit=1e-5, reg_covar=1e-15)
+    # parameters to choose the number of components
+    select_components_params = SelectComponentsParamHolder(n_inits=3, n_folds=2)
+    # parameters for MI distribution estimation
+    mi_dist_params = MIDistParamHolder(n_bootstrap=50, MC_samples=1e5)
+
+    mi_estimator = EstimateMI(gmm_fit_params=gmm_fit_params,
+                              select_components_params=select_components_params,
+                              mi_dist_params=mi_dist_params)
+    MI_mean, MI_std = mi_estimator.fit(X)
+
+This is equivalent to the first example, and yields (0.21 &pm; 0.04) nats. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
 
 ## Hyperparameter description
 Here we discuss the most important hyperparameters that are used in GMM-MI.
