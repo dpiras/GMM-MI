@@ -11,14 +11,17 @@ from gmm_mi.initializations import initialize_parameters
 import warnings
 
 
-class GMM(GMM):
+class GMMWithMI(GMM):
     """
     Custom Gaussian mixture model (GMM) class built on the sklearn GaussianMixture class. 
-    Allows to work with a GMM with fixed parameters, without fitting them. 
-    It also allows to estimate MI with a certain number of MC samples, 
-    or with quadrature method (when in 2D). 
-    The different initialization types are dealt with separately, so init_params is not used explicitly.
-    We recommend calculating the initial parameters with the provided utilities, and then providing them.
+    Its main extra feature is the mutual information (MI) estimation, either with MC integration
+    or a quadrature method (in 2D). It also has three extra features:
+        - allows to work with a GMM with fixed parameters, without fitting them first.
+        - the fit_predict function can take as input a validation set, so that the 
+        validation log-likelihood can also be tracked.
+        - initializations are dealt with separately, so init_params is not used explicitly.
+        We recommend calculating the initial parameters with the provided utilities in
+        initializations.py, and then providing them as input to this class.
     Most methods and attributes are the same as GaussianMixture; only differences are highlighted here.
     
     Parameters
@@ -26,37 +29,37 @@ class GMM(GMM):
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
         Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
-        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.
+        while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs; only
+        changed to improve clarity.
     weights_init : array-like of shape (n_components, ), default=np.array([1.])
         The user-provided initial weights.
-        If it is None, a single weight is initialized as 1.
+        If None, a single weight is initialized as 1.
     means_init : array-like of shape (n_components, n_features), default=np.array([0.])
         The user-provided initial means,
-        If it is None, a single mean is initialized at 0.
+        If None, a single mean is initialized at 0.
     precisions_init : array-like, default=np.array([1.]).reshape(-1, 1, 1)
         The user-provided initial precisions (inverse of the covariance
         matrices).
-        If it is None, a single precision is initialized as 1.
+        If None, a single precision is initialized as 1.
     covariances_init : array-like, default=None
-        The user-provided initial covariances (inverse of the precision
-        matrices).
-        If it is None, covariances are initialized as inverse of initial precision matrices.
+        The user-provided initial covariances (inverse of the precision matrices).
+        If None, covariances are initialized as inverse of initial precision matrices.
     
     Attributes
     ----------
     weights_ : array-like of shape (n_components,)
-        The weights of each mixture components. If not fit, set to the initial values.
+        The weights of each mixture components. Initially set to the initial values.
     means_ : array-like of shape (n_components, n_features)
-        The mean of each mixture component. If not fit, set to the initial values.
+        The mean of each mixture component. Initially set to the initial values.
     covariances_ : array-like
-        The covariance of each mixture component. If not fit, set to the initial values.
+        The covariance of each mixture component. Initially set to the initial values.
         The shape depends on `covariance_type`::
             (n_components,)                        if 'spherical',
             (n_features, n_features)               if 'tied',
             (n_components, n_features)             if 'diag',
             (n_components, n_features, n_features) if 'full'
     precisions_ : array-like
-        The precision matrices for each component in the mixture. If not fit, set to the initial values.
+        The precision matrices for each component in the mixture. Initially set to the initial values.
         A precision matrix is the inverse of a covariance matrix. A covariance matrix is
         symmetric positive definite so the mixture of Gaussian can be
         equivalently parameterized by the precision matrices. Storing the
@@ -78,32 +81,27 @@ class GMM(GMM):
     """
     def __init__(self,
                  n_components=1,
-                 covariance_type="full",
                  threshold_fit=1e-5, # this has replaced `tol`
                  reg_covar=1e-15,
-                 max_iter=100,
+                 max_iter=10000,
                  random_state=None,
-                 warm_start=False,
-                 verbose=0,
-                 verbose_interval=10,
+                 covariance_type='full',
                  weights_init=np.array([1.]),
                  means_init=np.array([0.]),
                  precisions_init=np.array([1.]).reshape(-1, 1, 1),
                  covariances_init=None
                  ):
-        super(GMM, self).__init__(n_components=n_components,
+        super(GMMWithMI, self).__init__(n_components=n_components,
                  covariance_type=covariance_type,
                  reg_covar=reg_covar,
                  max_iter=max_iter,
                  random_state=random_state,
-                 warm_start=warm_start,
-                 verbose=verbose,
-                 verbose_interval=verbose_interval,
                  weights_init=weights_init,
                  means_init=means_init,
                  precisions_init=precisions_init,
                 )
-
+        # having self.means_ (as well as weights and precisions) allows
+        # to bypass the check_is_fitted function
         self.means_ = means_init
         if covariances_init is None:
             covariances_init = np.linalg.inv(self.precisions_init)
@@ -113,62 +111,12 @@ class GMM(GMM):
         self.covariance_type = covariance_type
         self.precisions_cholesky_ = _compute_precision_cholesky(
                 self.covariances_, self.covariance_type
-            )
+           )
         self.threshold_fit = threshold_fit
-
-    def score_samples(self, X):
-        """Compute the log-likelihood of each sample. Removed check_is_fitted function.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            List of n_features-dimensional data points. Each row corresponds to a single data point.
-        
-        Returns
-        -------
-        log_prob : array, shape (n_samples,)
-            Log-likelihood of each sample in `X` under the current model.
-        """
-        return logsumexp(self._estimate_weighted_log_prob(X), axis=1)
-
-    def predict(self, X):
-        """Predict the labels for the data samples in X using trained model.
-        Removed check_is_fitted function.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
-            
-        Returns
-        -------
-        labels : array, shape (n_samples,)
-            Component labels.
-        """
-        return self._estimate_weighted_log_prob(X).argmax(axis=1)
-
-    def predict_proba(self, X):
-        """Evaluate the components' density for each sample.
-        Removed check_is_fitted function.
-        
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            List of n_features-dimensional data points. Each row
-            corresponds to a single data point.
-            
-        Returns
-        -------
-        resp : array, shape (n_samples, n_components)
-            Density of each Gaussian component for each sample in X.
-        """
-        _, log_resp = self._estimate_log_prob_resp(X)
-        return np.exp(log_resp)
     
     def _initialize_parameters(self):
         """Initialize the model parameters. Since we deal with initialization 
-        before running the GMM, this simply returns the inital parameters.
+        before running the GMM, this simply returns the initial parameters.
         
         Parameters
         ----------
@@ -186,64 +134,6 @@ class GMM(GMM):
                 for prec_init in self.precisions_init
             ]
         )        
-        
-    def sample(self, n_samples=1):
-        """Generate random samples from the Gaussian mixture model.
-        Removed check_is_fitted function.
-
-        Parameters
-        ----------
-        n_samples : int, default=1
-            Number of samples to generate.
-        
-        Returns
-        -------
-        X : array, shape (n_samples, n_features)
-            Randomly generated sample.
-        y : array, shape (nsamples,)
-            Component labels.
-        """
-        if n_samples < 1:
-            raise ValueError(
-                "Invalid value for 'n_samples': %d . The sampling requires at "
-                "least one sample." % (self.n_components)
-            )
-
-        _, n_features = self.means_.shape
-        rng = check_random_state(self.random_state)
-        # how many samples for each component?
-        n_samples_comp = rng.multinomial(n_samples, self.weights_)
-
-        if self.covariance_type == "full":
-            X = np.vstack(
-                [
-                    rng.multivariate_normal(mean, covariance, int(sample))
-                    for (mean, covariance, sample) in zip(
-                        self.means_, self.covariances_, n_samples_comp
-                    )
-                ]
-            )
-        elif self.covariance_type == "tied":
-            X = np.vstack(
-                [
-                    rng.multivariate_normal(mean, self.covariances_, int(sample))
-                    for (mean, sample) in zip(self.means_, n_samples_comp)
-                ]
-            )
-        else:
-            X = np.vstack(
-                [
-                    mean + rng.randn(sample, n_features) * np.sqrt(covariance)
-                    for (mean, covariance, sample) in zip(
-                        self.means_, self.covariances_, n_samples_comp
-                    )
-                ]
-            )
-        # this simply expands the information of how many samples per components
-        y = np.concatenate(
-            [np.full(sample, j, dtype=int) for j, sample in enumerate(n_samples_comp)]
-        )
-        return (X, y)
 
     def fit(self, X, y=None, val_set=None):
         """Estimate model parameters with the EM algorithm.
@@ -306,48 +196,41 @@ class GMM(GMM):
         self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
 
         do_init = True
-        n_init = 1
         max_lower_bound = -np.inf
         self.converged_ = False
         random_state = check_random_state(self.random_state)
+        n_samples, _ = X.shape     
 
-        n_samples, _ = X.shape
-        
-        for init in range(n_init):
-            self._print_verbose_msg_init_beg(init)
-            
-            if do_init:
-                self._initialize_parameters()
-            
-            lower_bound = -np.inf if do_init else self.lower_bound_
+        if do_init:
+            self._initialize_parameters()
+
+        lower_bound = -np.inf if do_init else self.lower_bound_
+        if val_set is not None:
+            self.train_loss, self.val_loss = [], []
+
+        for n_iter in range(1, self.max_iter + 1):
+            prev_lower_bound = lower_bound
+            log_prob_norm, log_resp = self._e_step(X)
+            self._m_step(X, log_resp)
+            lower_bound = self._compute_lower_bound(log_resp, log_prob_norm)
+
+            change = lower_bound - prev_lower_bound
+            self._print_verbose_msg_iter_end(n_iter, change)
+
             if val_set is not None:
-                self.train_loss, self.val_loss = [], []
-  
-            for n_iter in range(1, self.max_iter + 1):
-                prev_lower_bound = lower_bound
-                log_prob_norm, log_resp = self._e_step(X)
-                self._m_step(X, log_resp)
-                lower_bound = self._compute_lower_bound(log_resp, log_prob_norm)
+                log_prob_norm_train, _ = self._e_step(X)
+                log_prob_norm_val, _ = self._e_step(val_set)
+                self.train_loss.append(log_prob_norm_train)
+                self.val_loss.append(log_prob_norm_val)
 
-                change = lower_bound - prev_lower_bound
-                self._print_verbose_msg_iter_end(n_iter, change)
+            if abs(change) < self.threshold_fit:
+                self.converged_ = True
+                break
 
-                if val_set is not None:
-                    log_prob_norm_train, _ = self._e_step(X)
-                    log_prob_norm_val, _ = self._e_step(val_set)
-                    self.train_loss.append(log_prob_norm_train)
-                    self.val_loss.append(log_prob_norm_val)
-
-                if abs(change) < self.threshold_fit:
-                    self.converged_ = True
-                    break
-
-            self._print_verbose_msg_init_end(lower_bound)
-
-            if lower_bound > max_lower_bound or max_lower_bound == -np.inf:
-                max_lower_bound = lower_bound
-                best_params = self._get_parameters()
-                best_n_iter = n_iter
+        if lower_bound > max_lower_bound or max_lower_bound == -np.inf:
+            max_lower_bound = lower_bound
+            best_params = self._get_parameters()
+            best_n_iter = n_iter
 
         if not self.converged_:
             warnings.warn(
@@ -434,7 +317,7 @@ class GMM(GMM):
             The value of mutual information.
         """
         # we create a GMM object to pass to the integral functions
-        gmm = GMM(n_components=self.n_components, weights_init=self.weights_, 
+        gmm = GMMWithMI(n_components=self.n_components, weights_init=self.weights_, 
                      means_init=self.means_, covariances_init=self.covariances_)
         entropy_2d = integrate.dblquad(entropy_2d_integrand, -limit, limit, 
                                       lambda x: -limit, lambda x: limit, 

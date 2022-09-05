@@ -1,5 +1,5 @@
 import numpy as np
-from gmm_mi.gmm import GMM
+from gmm_mi.gmm import GMMWithMI as GMM
 
 
 def single_fit(X, n_components, reg_covar=1e-15, threshold_fit=1e-5, max_iter=10000, 
