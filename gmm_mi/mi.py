@@ -1,4 +1,6 @@
 import numpy as np
+import warnings
+from sklearn.exceptions import ConvergenceWarning
 from gmm_mi.cross_validation import CrossValidation
 from gmm_mi.single_fit import single_fit
 from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
@@ -331,6 +333,8 @@ class EstimateMI:
             self.results_dict[n_components] = current_results_dict
             if not self.converged:
                 self.metric = self._select_best_metric(n_components=n_components)
+                # store metric, just to make it accessible outside of this class, if needed
+                self.results_dict[n_components]['metric'] = self.metric
                 self._check_convergence(n_components=n_components)
 
             if self.converged:
@@ -354,8 +358,22 @@ class EstimateMI:
                                                              w_init=w_init, m_init=m_init, p_init=p_init)
                 break
 
+            # in the unlikely case that we have not reached enough GMM components
+            # we raise a ConvergenceWarning and calculate MI with 1 component only
+            if n_components == self.max_components:
+                warnings.warn(f"Convergence in the number of GMM components was not reached, "\
+                              f"so MI will be calculated with 1 component only. "\
+                              f"Try increasing max_components or threshold_components, "\
+                              f"or decreasing the patience.", ConvergenceWarning)
+                best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=1,    
+                                                                                                  fixed_components=True,
+                                                                                                  patience=0)
+                MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
+                                             w_init=w_init, m_init=m_init, p_init=p_init)                
+        
         if self.verbose:
             print('MI estimation completed, returning mean and standard deviation.')
+            
         if self.return_lcurves:
             return MI_mean, MI_std, self.lcurves        
         else:
@@ -510,6 +528,13 @@ class EstimateMI:
                     self.category_best_params.append({'w': w_init, 'm': m_init, 'p': p_init, 
                                                  'bc': best_components, 'seed': best_seed})                    
                     break
+            
+            # in the unlikely case that we have not reached enough GMM components
+            # we raise an error since we need all GMM parameters to calculate MI
+            if n_components == self.max_components:
+                raise ValueError(f"Convergence in the number of GMM components was not reached! "\
+                                 f"Try increasing max_components or threshold_components, "\
+                                 f"or decreasing the patience.")
 
         if self.verbose:
             print(f'Found best parameters for all GMMs, now onto the MI estimation') 
