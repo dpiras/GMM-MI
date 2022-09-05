@@ -40,7 +40,7 @@ This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value 
     
     mi_estimator.plot_fitted_model()
 
-To choose the hyperparameters, we provide three classes: `GMMFitParamHolder, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example usage is as follows:
+To choose the hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example usage is as follows:
 
     from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
 
