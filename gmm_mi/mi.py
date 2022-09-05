@@ -57,7 +57,7 @@ class EstimateMI:
         A warning is raised if this number of components is used; if so, you might want to use a different
         `metric_method`.
         
-    (inherited from GMMFitParamHolder, passed as mi_dist_params)            
+    (inherited from MIDistParamHolder, passed as mi_dist_params)            
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and

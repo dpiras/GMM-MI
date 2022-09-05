@@ -59,24 +59,24 @@ To choose the hyperparameters, we provide three classes: `GMMFitParamHolder`, `S
 This is equivalent to the first example, and yields (0.21 &pm; 0.04) nats. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
 
 ## Hyperparameter description
-Here we discuss the most important hyperparameters that are used in GMM-MI.
+Here we report the most important hyperparameters that are used in GMM-MI.
 
-    n_folds : int, default=2
-        Number of folds in the cross-validation (CV) performed to find the best initialization
-        parameters. As in every CV procedure, there is no best value. A good value, though,
-        should ensure each fold has enough samples to be representative of your training set.
-    n_inits : int, default=3
-        Number of initializations used to find the best initialization parameters. Higher
-        values will decrease the chances of stopping at a local optimum, while making the
-        code slower.
-    reg_covar : float, default=1e-15
-        The constant term added to the diagonal of the covariance matrices to avoid singularities.
-        Smaller values will increase the chances of singular matrices, but will have a smaller
-        impact on the final MI estimates.
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training. Smaller
         values will improve the fit quality and reduce the chances of stopping at a local optimum,
         while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.
+    reg_covar : float, default=1e-15
+        The constant term added to the diagonal of the covariance matrices to avoid singularities.
+        Smaller values will increase the chances of singular matrices, but will have a smaller
+        impact on the final MI estimates.
+    n_inits : int, default=3
+        Number of initializations used to find the best initialization parameters. Higher
+        values will decrease the chances of stopping at a local optimum, while making the
+        code slower.
+    n_folds : int, default=2
+        Number of folds in the cross-validation (CV) performed to find the best initialization
+        parameters. As in every CV procedure, there is no best value. A good value, though,
+        should ensure each fold has enough samples to be representative of your training set.
     threshold_components : float, default=1e-5
         The metric threshold to decide when to stop adding GMM components. In other words, GMM-MI
         stops adding components either when the metric gets worse, or when the improvement in the
@@ -86,12 +86,13 @@ Here we discuss the most important hyperparameters that are used in GMM-MI.
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
         with higher numbers of GMM components, while taking longer to converge.
+    
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
         will make the MI distribution more Gaussian-like, but will take longer.
         If less than 1, do not perform bootstrap and actually just do a single 
-        fit on the entire datase; there will be no MI uncertainty in this case.
+        fit on the entire dataset; there will be no MI uncertainty in this case.i
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         Higher values will return less noisy estimates of MI, but will take longer.
