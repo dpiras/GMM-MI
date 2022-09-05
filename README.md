@@ -61,6 +61,7 @@ This is equivalent to the first example, and yields (0.21 &pm; 0.04) nats. More 
 ## Hyperparameter description
 Here we report the most important hyperparameters that are used in GMM-MI.
 
+    (controlled by GMMFitParamHolder, passed as gmm_fit_params)
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training. Smaller
         values will improve the fit quality and reduce the chances of stopping at a local optimum,
@@ -69,6 +70,8 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
         Smaller values will increase the chances of singular matrices, but will have a smaller
         impact on the final MI estimates.
+
+    (controlled by ChooseComponentParamHolder, passed as select_component_params)
     n_inits : int, default=3
         Number of initializations used to find the best initialization parameters. Higher
         values will decrease the chances of stopping at a local optimum, while making the
@@ -86,7 +89,8 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
         with higher numbers of GMM components, while taking longer to converge.
-    
+   
+    (controlled by MIDistParamHolder, passed as mi_dist_params) 
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and
