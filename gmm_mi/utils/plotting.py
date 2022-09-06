@@ -479,7 +479,7 @@ def plot_bias_chi2_histogram(estimates, analytic, ax=None, bins=20, alpha=0.5, s
         title = f'{ds}: {np.mean(biases):.2f}$\pm${np.std(biases):.2f}, $\chi^2_{{{{red}}}}$={red_chi2:.2f} with {df} dof'
     else:
         title = ''
-    set_titles(ax, xlabel='Residual', ylabel='Probability', title=title, 
+    set_titles(ax, xlabel='Standardized residual', ylabel='Probability', title=title, 
                fontsize=labelfontsize, color=labelcolor)
     if hide_ylabel:
         ax.set_ylabel(ylabel='Probability', fontsize=labelfontsize, color='white')
