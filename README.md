@@ -38,7 +38,7 @@ This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value 
     fig, ax = plt.subplots(1, 1, figsize=(11, 11))
     # X is the array with the input data
     ax.scatter(X[:, 0], X[:, 1], label='Input data')
-    mi_estimator.plot_fitted_model(ax=ax)
+    fig, ax = mi_estimator.plot_fitted_model(ax=ax)
 
 To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 
