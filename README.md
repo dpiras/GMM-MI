@@ -65,6 +65,8 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         The log-likelihood threshold on each GMM fit used to choose when to stop training. Smaller
         values will improve the fit quality and reduce the chances of stopping at a local optimum,
         while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs.
+        Note this parameter can be degenerate with `threshold_components`, and the two should be set
+        together to reach a good density estimate of the data.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
         Smaller values will increase the chances of singular matrices, but will have a smaller
@@ -84,6 +86,8 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         stops adding components either when the metric gets worse, or when the improvement in the
         metric value is less than this threshold. Smaller values ensure that enough components are
         considered and that the data distribution is correctly captured, while taking longer to converge.
+	Note this parameter can be degenerate with `threshold_fit`, and the two should be set 
+	together to reach a good density estimate of the data.
     patience : int, default=1 
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
         Same concept as patience when training a neural network. Higher value will fit models
@@ -95,7 +99,7 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         Higher values will return a better estimate of the MI uncertainty, and
         will make the MI distribution more Gaussian-like, but will take longer.
         If less than 1, do not perform bootstrap and actually just do a single 
-        fit on the entire dataset; there will be no MI uncertainty in this case.i
+        fit on the entire dataset; there will be no MI uncertainty in this case.
     MC_samples : int, default=1e5
         Number of MC samples to use to estimate the MI integral. Only used if MI_method == 'MC'.
         Higher values will return less noisy estimates of MI, but will take longer.
