@@ -19,7 +19,7 @@ class SelectComponentsParamHolder:
         self.n_folds = n_folds
         assert metric_method == 'valid' or metric_method == 'aic' or metric_method == 'bic', f"metric_method must be either 'valid', 'aic' or 'bic, found '{metric_method}'"
         self.metric_method = metric_method
-        assert threshold_components > 0, f"`threshold_components` must be a positive number, found '{threshold_components}'"
+        assert threshold_components >= 0, f"`threshold_components` must be a non-negative number, found '{threshold_components}'"
         self.threshold_components = threshold_components
         assert patience >= 1, f"patience should be at least 1, found {patience}."
         self.patience = patience

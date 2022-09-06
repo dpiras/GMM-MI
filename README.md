@@ -87,7 +87,7 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         stops adding components either when the metric gets worse, or when the improvement in the
         metric value is less than this threshold. Smaller values ensure that enough components are
         considered and that the data distribution is correctly captured, while taking longer to converge.
-	Note this parameter can be degenerate with `threshold_fit`, and the two should be set 
+        Note this parameter can be degenerate with `threshold_fit`, and the two should be set 
 	together to reach a good density estimate of the data.
     patience : int, default=1 
         Number of extra components to "wait" until convergence is declared. Must be at least 1.
