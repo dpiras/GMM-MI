@@ -379,13 +379,23 @@ class EstimateMI:
         else:
             return MI_mean, MI_std    
  
-    def plot_fitted_model(self):
-        """Plot contours of fitted model over input data.
+    def plot_fitted_model(self, ax=None, **kwargs):
+        """Fit model to inout data and plot its contours.
         Only works if the model has been fitted successfully first.
+        
+        Parameters
+        ----------
+        ax : instance of the axes.Axes class from pyplot, default=None
+            The panel where to plot the samples. 
+        kwargs : dictionary
+            The extra keyword arguments to pass to the plotting function.
         
         Returns
         -------
-        None
+        fig: instance of the figure.Figure class from pyplot
+            The output figure.
+        ax : instance of the axes.Axes class from pyplot
+            The output panel.
         """
         assert self.converged == True, "You can only plot the fitted model after MI has "\
                                        "been estimated; call .fit() on your data first!"
@@ -393,8 +403,8 @@ class EstimateMI:
         gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
                  threshold_fit=self.threshold_fit, random_state=self.best_seed, max_iter=self.max_iter, 
                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
-        plot_gmm_contours(gmm, ls='-', label='Fitted model',
-                          scatter_data=self.X)
+        fig, ax = plot_gmm_contours(gmm, ax=ax, label='Fitted model', **kwargs)
+        return fig, ax
                
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
@@ -402,7 +412,7 @@ class EstimateMI:
         The complete formula can be found in Appendix B of Piras et al. (2022).
 
         Returns
-        ----------
+        -------
         MI : float
             The value of MI.
         """    

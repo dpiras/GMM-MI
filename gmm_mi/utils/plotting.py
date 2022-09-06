@@ -17,12 +17,16 @@ def choose_ax(ax, figsize=(15, 10)):
     
     Returns
     -------
+    fig: instance of the figure.Figure class from pyplot
+        The output figure.
     ax : instance of the axes.Axes class from pyplot
         The output panel.
     """
     if ax is None:
-        _, ax = plt.subplots(1, 1, figsize=figsize)
-    return ax
+        fig, ax = plt.subplots(1, 1, figsize=figsize)
+    else:
+        fig = None
+    return fig, ax
 
 
 def set_ticksize(ax, axis='both', which='major', labelsize=20, size=6):
@@ -159,7 +163,7 @@ def find_contours(contour_levels):
     
 def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
                  weight_size=1000, alpha=None, color=None, label=None, marker='X',
-                 component_count=0, legendsize=32, loc='lower left', frameon=False, **kwargs):
+                 component_count=0, legendsize=30, loc='best', frameon=False, **kwargs):
     """Draw the error ellipse corresponding to a given mean vector and Gaussian covariance matrix.
     Since this is don in the context of Gaussian mixture models (GMMs), the weight is also indicated 
     with a marker whose size is proportional to the weight value. Based on
@@ -190,18 +194,20 @@ def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
         Label associated to the ellipse.
     component_count : int, default=0
         A counter so that the label is printed only for the first component.
-    legendsize : int, default=32
+    legendsize : int, default=30
         Font size of the legend.
-    loc : string, default='lower left'
+    loc : string, default='best'
         Legend position.
     frameon : bool, default=False
         Whether to frame the legend or not.
+    kwargs : dictionary
+        The extra keyword arguments to pass to the plotting function.    
         
     Returns
     -------
     None
     """
-    ax = choose_ax(ax)
+    fig, ax = choose_ax(ax)
     assert covariance.shape == (2, 2), 'Each covariance matrix must be of shape (2, 2)!'
     # convert covariance to the parameters of the corresponding error ellipse
     angle, width, height = calculate_ellipse_params(covariance)
@@ -209,38 +215,17 @@ def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
     contours = find_contours(contour_levels)   
     # draw the ellipse
     for contour in contours:
-        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle, color=color, 
+        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle, color=color, fill=False, 
                              alpha=alpha, label=label if component_count==0 else "", **kwargs))
         ax.scatter(mean[0], mean[1],  marker=marker, color=color,
                    s=weight_size*weight, alpha=alpha)
     set_legend(ax, fontsize=legendsize, frameon=frameon)
 
-
-def plot_samples(gmm, ax, N=1e4):
-    """Produce a scatter plot of the samples of a Gaussian mixture model (GMM).
     
-    Parameters
-    ----------
-    gmm : instance of the GMM class
-        The GMM whose samples are going to be displayed.
-    ax : instance of the axes.Axes class from pyplot
-        The panel where to plot the samples.     
-    N : int, default=1e4
-        The number of samples to plot.
-
-    Returns
-    -------
-    None
-    """
-    X = gmm.sample(N)[0]
-    ax.scatter(X[:, 0], X[:, 1])
-    
-    
-def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8, 
-                      linewidth=4, fill=False, label='', scatter=True, 
-                      scatter_data=None, N=1e4, xlabel='X1', ylabel='X2'):
-    """Draw the contour ellipses corresponding to a given Gaussian mixture model (GMM),
-    including a possible scatte plot of a required number of samples from the GMM.
+def plot_gmm_contours(gmm, ax=None, color='salmon', alpha=0.8, 
+                      linewidth=4, fill=False, label='', xlabel='X1', ylabel='X2',
+                      **kwargs):
+    """Draw the contour ellipses corresponding to a given Gaussian mixture model (GMM).
     
     Parameters
     ----------
@@ -250,8 +235,6 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8,
         The panel where to plot the samples.   
     color : string, default='salmon'
         The color of the GMM contours.
-    ls : string, default='--'
-        The line style of the contours. Check pyplot for possible values.
     alpha : float, default=0.8
         Transparency of the contour lines; must be between 0 and 1.
     linewidth : int, default=4
@@ -260,35 +243,29 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', ls='--', alpha=0.8,
         Whether to fill the contours or not.
     label : string, default=''
         The legend label to associate to the contours.
-    scatter : bool, default=True
-        Whether to also display a scatter plot with samples of the GMM.
-    scatter_data : array-like of shape (n_samples, 2), default=None
-        If provided, make a scatter plot of these data instead of data of the input GMM.
-    N : int, default=1e4
-        The number of samples to plot in the scatter plot.
     xlabel : string, default='X1'
         Label of the x-axis.
     ylabel : string, default='X2'
         Label of the y-axis. 
+    kwargs : dictionary
+        The extra keyword arguments to pass to the plotting functions.
         
     Returns
     -------
-    None
+    fig: instance of the figure.Figure class from pyplot
+        The output figure.
+    ax : instance of the axes.Axes class from pyplot
+        The output panel.
     """
-    ax = choose_ax(ax, figsize=(10, 10))
-    if scatter:
-        if type(scatter_data) is np.ndarray:
-            ax.scatter(scatter_data[:, 0], scatter_data[:, 1], label='Input data')
-        else:
-            plot_samples(gmm=gmm, ax=ax, N=N)
+    fig, ax = choose_ax(ax, figsize=(10, 10))
             
     means, covariances, weights = gmm.means_, gmm.covariances_, gmm.weights_
     for component_count, (mean, covariance, weight) in enumerate(zip(means, covariances, weights)):
-        draw_ellipse(mean, covariance, weight, ax=ax, alpha=alpha, fill=fill, 
-                     color=color,ls=ls, linewidth=linewidth, label=label, component_count=component_count)  
-
+        draw_ellipse(mean, covariance, weight, ax=ax, component_count=component_count, alpha=alpha, 
+                     color=color, linewidth=linewidth, label=label, **kwargs)  
     set_ticksize(ax)
     set_titles(ax, xlabel=xlabel, ylabel=ylabel)
+    return fig, ax
 
 
 def calculate_summary_and_significance(estimates):
@@ -346,7 +323,7 @@ def histogram_estimates(estimates, ax=None, bins=20, alpha=1, title='',
     -------
     None
     """    
-    ax = choose_ax(ax)
+    fig, ax = choose_ax(ax)
     mean_value, mean_error, significance = calculate_summary_and_significance(estimates)
     ax.hist(estimates.flatten(), alpha=alpha, bins=bins, color=color, histtype=histtype, lw=lw,
             label=f'MI values, {significance:.1f}$\sigma$,\n{mean_value:.4f}$\pm${mean_error:.4f}' 
@@ -406,7 +383,7 @@ def plot_multivariate_normal(ax=None, mean=0, cov=1, alpha=1, color='black', lw=
     None
     """
     from scipy.stats import multivariate_normal
-    ax = choose_ax(ax)
+    fig, ax = choose_ax(ax)
     x = np.linspace(mean-3, mean+3, 1000, endpoint=False)
     y = multivariate_normal.pdf(x, mean=mean, cov=cov)
     ax.plot(x, y, c=color, ls=ls, lw=lw, alpha=alpha, label=r'$\mathcal{N}(0, 1)$')
@@ -471,7 +448,7 @@ def plot_bias_chi2_histogram(estimates, analytic, ax=None, bins=20, alpha=0.5, s
     chi2 = np.sum(biases**2)
     df = len(estimates)-1    
     red_chi2 = chi2/df
-    ax = choose_ax(ax)
+    fig, ax = choose_ax(ax)
     ax.hist(biases, alpha=alpha, bins=bins, 
              label='GMM-MI', color=color, density='True')
     plot_multivariate_normal(ax=ax)    
@@ -591,7 +568,7 @@ def create_heatmap(data, row_labels, col_labels, fsize=30, ax=None,
         The colorbar.
     """
 
-    ax = choose_ax(ax, figsize=(24, 8))
+    fig, ax = choose_ax(ax, figsize=(24, 8))
        
     # plot the heatmap
     im = ax.imshow(data, **kwargs)

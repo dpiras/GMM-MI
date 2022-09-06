@@ -2,9 +2,6 @@
 
 Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://www.overleaf.com/project/62920145c884448df7e9745c) (the link will be to the actual paper once submitted). Please [cite it](#citation) if you use it in your work!
 
-Current possible extensions include:
-- can we make it faster with some form of parallelisation? especially CV!
-
 ## Installation
 
 To install GMM-MI, we currently recommend the following steps:
@@ -37,9 +34,13 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
 
 This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats. If you want to visualize the fitted model over your input data, you can run:
     
-    mi_estimator.plot_fitted_model()
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(1, 1, figsize=(11, 11))
+    # X is the array with the input data
+    ax.scatter(X[:, 0], X[:, 1], label='Input data')
+    mi_estimator.plot_fitted_model(ax=ax)
 
-To choose the hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example usage is as follows:
+To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 
     from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
 
