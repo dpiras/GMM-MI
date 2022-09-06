@@ -216,7 +216,7 @@ class EstimateMI:
         else:
             self.patience_counter += 1
             if self.verbose:
-                print(f'Metric did not improve, or improvement was less than threshold; patience counter increased by 1...')
+                print(f'Metric change is less than threshold; patience counter increased by 1...')
             if self.patience_counter >= self.patience:
                 if self.verbose:
                     print(f'Reached patience limit, stop adding components.')
