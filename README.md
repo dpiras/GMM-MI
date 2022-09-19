@@ -5,7 +5,7 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 ## Installation
 
 To install GMM-MI, we currently recommend the following steps:
-1. (optional) `conda create -n gmm_mi python=3.7 jupyter` (we recommend creating a custom `conda` environment) 
+1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (we recommend creating a custom `conda` environment) 
 2. (optional) `conda activate gmm_mi` (activate it)
 3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
 4. `cd MI_estimation` (move into cloned folder)
@@ -16,7 +16,7 @@ We will make the package `pip` installable once we make the repository public, a
 
 ## Usage
 
-To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data; you can find an example in the next section. A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L9), and we discuss a few of them [below](#hyperparameter-description).
+To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data; you can find an example in the next section. A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
 
 ## Example
 
