@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 from sklearn.exceptions import ConvergenceWarning
+from tqdm import tqdm
 from gmm_mi.cross_validation import CrossValidation
 from gmm_mi.single_fit import single_fit
 from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
@@ -279,7 +280,7 @@ class EstimateMI:
         else:
             do_bootstrap = True
         MI_estimates = np.zeros(self.n_bootstrap)
-        for n_b in range(self.n_bootstrap):
+        for n_b in tqdm(range(self.n_bootstrap)):
             if do_bootstrap:
                 # we use index n_b to change the seed so that results will be fully reproducible
                 rng = np.random.default_rng(n_b)
@@ -445,7 +446,7 @@ class EstimateMI:
         else:
             do_bootstrap = True
         MI_estimates = np.zeros(self.n_bootstrap)
-        for n_b in range(self.n_bootstrap):            
+        for n_b in tqdm(range(self.n_bootstrap)):            
             # to store the fitted GMM models for each category value
             self.all_gmms = []
             for category_value in range(self.category_values):
