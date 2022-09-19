@@ -577,7 +577,7 @@ def create_heatmap(data, row_labels, col_labels, fsize=30, ax=None,
     # create colorbar
     cbar = ax.figure.colorbar(im, ax=ax, cax=cax, **cbar_kw)
     cbar.ax.tick_params(labelsize=20, length=10, width=2) 
-    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=25)
+    cbar.ax.set_ylabel(cbarlabel, rotation=-90, va="bottom", fontsize=30)
 
     # show all ticks and label them with the respective list entries.
     ax.set_xticks(np.arange(data.shape[1]))

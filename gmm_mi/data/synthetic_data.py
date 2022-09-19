@@ -28,6 +28,14 @@ D3p = GMM(n_components = 3,
                                          [[0.1, 0.05], [0.05, 0.1]]]),
             random_state = random_state)
 
+D3_rhoneq0 = GMM(n_components = 3,
+            weights_init = np.array([0.3, 0.45, 0.25]),
+            means_init = np.array([[-1, 1], [0, 2], [-1.5, 2]]),
+            covariances_init = np.array([[[1, 0.1], [0.1, 0.1]], 
+                                         [[0.5, 0.2], [0.2, 0.5]], 
+                                         [[0.1, 0.05], [0.05, 0.1]]]),
+            random_state = random_state)
+
 D5 = GMM(n_components = 5,
             weights_init = np.array([0.2, 0.35, 0.15, 0.12, 0.18]),
             means_init = np.array([[-1, 1], [0, 2], [-1.5, 2], [2, 1], [-0.25, 0]]),
