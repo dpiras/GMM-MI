@@ -16,7 +16,7 @@ We will make the package `pip` installable once we make the repository public, a
 
 ## Usage
 
-To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data; you can find an example in the next section. A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
+To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data. You can find an example application of GMM-MI in the next section, and a more complete walkthrough, with common scenarios and possible pitfalls, in this [notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/00_walkthrough_and_pitfalls.ipynb). A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
 
 ## Example
 
