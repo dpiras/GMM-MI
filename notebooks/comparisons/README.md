@@ -1,6 +1,6 @@
 # Notebooks 
 
-In this folder we share notebooks with comparisons of GMM-MI with other estimators of MI. Results are usually stored in [`results`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/comparisons/results), and figures in (did you guess it?) [`figures`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/comparisons/figures). The folder [`mine_pytorch`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/mine-pytorch) contains a version of the MINE estimator implementation available [at this repository](https://github.com/gtegner/mine-pytorch), used in notebooks 5&ndash;8.
+In this folder we share notebooks with comparisons of GMM-MI with other estimators of MI. Results are usually stored in [`results`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/comparisons/results), and figures in (did you guess it?) [`figures`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/comparisons/figures). The folder [`mine_pytorch`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/comparisons/mine-pytorch) contains a version of the MINE estimator implementation available [at this repository](https://github.com/gtegner/mine-pytorch), used in notebooks 5&ndash;8.
 
 ## List of available notebooks
 
