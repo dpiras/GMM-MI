@@ -16,7 +16,7 @@ We will make the package `pip` installable once we make the repository public, a
 
 ## Usage
 
-To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data. You can find an example application of GMM-MI in the next section, and a more complete walkthrough, with common scenarios and possible pitfalls, in this [notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/00_walkthrough_and_pitfalls.ipynb). A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
+To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data. You can find an example application of GMM-MI in the next section, and a more complete walkthrough, with common scenarios and possible pitfalls, in this [notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/walkthrough_and_pitfalls.ipynb). A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
 
 ## Example
 
@@ -32,7 +32,7 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     mi_estimator = EstimateMI()
     MI_mean, MI_std = mi_estimator.fit(X)
 
-This yields (0.21 &pm; 0.04) nats, well in agreement with the theoretical value of 0.22 nats. If you want to visualize the fitted model over your input data, you can run:
+This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. If you want to visualize the fitted model over your input data, you can run:
     
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 1, figsize=(11, 11))
@@ -56,7 +56,7 @@ To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHold
                               mi_dist_params=mi_dist_params)
     MI_mean, MI_std = mi_estimator.fit(X)
 
-This is equivalent to the first example, and yields (0.21 &pm; 0.04) nats. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
+This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
 
 ## Hyperparameter description
 Here we report the most important hyperparameters that are used in GMM-MI.
