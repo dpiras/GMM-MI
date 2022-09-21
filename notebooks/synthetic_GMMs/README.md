@@ -1,6 +1,6 @@
 # Notebooks
 
-In this folder we share notebooks with example use cases of GMM-MI on synthetic GMMs. Pre-computed results are stored in [`results`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/results), and figures in (you guess it) [`figures`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/figures). The folder [`MI_synthetic_datasets`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/MI_synthetic_datasets) contains the true value of MI for the synthetic datasets found in [`gmm_mi/data`](https://github.com/dpiras/MI_estimation/tree/main/gmm_mi/data)
+In this folder we share notebooks with example use cases of GMM-MI on synthetic GMMs. Pre-computed results are stored in [`results`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/results), and figures in (you guess it) [`figures`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/figures). The folder [`MI_synthetic_datasets`](https://github.com/dpiras/MI_estimation/tree/main/notebooks/synthetic_GMMs/MI_synthetic_datasets) contains the true value of MI for the synthetic datasets found in [`gmm_mi/data`](https://github.com/dpiras/MI_estimation/tree/main/gmm_mi/data).
 
 ## List of available notebooks
 
