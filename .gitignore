@@ -5,6 +5,6 @@ __pycache__
 ./old_stuff/*
 
 # created by MINE experiments
-notebooks/lightning_logs/*
+notebooks/comparisons/lightning_logs/*
 
 
