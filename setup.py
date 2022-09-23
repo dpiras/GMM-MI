@@ -22,7 +22,6 @@ setup(
                       'tqdm',
                       'matplotlib>=3.1.2',
                       'numpy>=1.17.4',
-                      'pandas>=1.3.4',
                       'scikit-learn>=1.0.2',
                       'scipy>=1.7.1']
                       )
