@@ -4,7 +4,6 @@ import warnings
 from gmm_mi.single_fit import single_fit
 from gmm_mi.initializations import initialize_parameters
 
-
 class CrossValidation:
     """Perform cross-validation (CV) to select the best GMM initialization parameters, 
     and thus avoid local minima in the density estimation.
@@ -50,6 +49,7 @@ class CrossValidation:
         self.all_ms = np.zeros((self.n_inits, self.n_folds, self.n_components, self.features))
         self.all_ps = np.zeros((self.n_inits, self.n_folds, self.n_components, self.features, self.features))    
         self.all_lcurves = []
+        self.convergence_flags = []
         # random split seed is fixed here, but results should be independent of the exact split
         self.kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=42)
         
@@ -84,7 +84,10 @@ class CrossValidation:
                 # save the loss functions as well
                 self.all_lcurves.append(np.copy(gmm.train_loss))
                 self.all_lcurves.append(np.copy(gmm.val_loss))
-        
+                # save a flag to warn about non-convergence
+                convergence_flag = False if gmm.n_iter_ <= 2 else True
+                self.convergence_flags.append(convergence_flag)
+                
     def fit(self, X):
         """Perform CV on the given data.
         
@@ -116,5 +119,6 @@ class CrossValidation:
         best_fold_in_init = np.argmax(self.val_scores[best_seed])    
         results_dict = {'best_seed': best_seed, 'best_val_score': best_val_score, 
                         'best_fold_in_init': best_fold_in_init, 'all_lcurves': self.all_lcurves, 
-                        'all_ws': self.all_ws, 'all_ms': self.all_ms, 'all_ps': self.all_ps}
+                        'all_ws': self.all_ws, 'all_ms': self.all_ms, 'all_ps': self.all_ps,
+                        'convergence_flags': self.convergence_flags}
         return results_dict  

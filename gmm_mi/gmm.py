@@ -234,16 +234,17 @@ class GMMWithMI(GMM):
 
         if not self.converged_:
             warnings.warn(
-                "Initialization %d did not converge. "
+                "A fit did not converge. "
                 "Try different init parameters, "
-                "or increase max_iter, threshold_fit "
-                "or check for degenerate data." % (init + 1),
+                "or increase max_iter, decrease threshold_fit "
+                "or check for degenerate data.",
                 ConvergenceWarning,
             )
-
+            
         self._set_parameters(best_params)
         self.n_iter_ = best_n_iter
         self.lower_bound_ = max_lower_bound
+
 
         # Always do a final e-step to guarantee that the labels returned by
         # fit_predict(X) are always consistent with fit(X).predict(X)

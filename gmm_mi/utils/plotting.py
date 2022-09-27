@@ -488,7 +488,7 @@ def plot_loss_curve(loss_curves, index, ax):
     """    
     current_train_loss = loss_curves[2*index]
     current_val_loss = loss_curves[2*index+1]
-    iterations = np.arange(len(current_train_loss))
+    iterations = np.arange(1, 1+len(current_train_loss))
 
     ax.plot(iterations, current_train_loss, label='Train', lw=3, ls='-', color='grey')
     ax.plot(iterations, current_val_loss, label='Valid', lw=3, ls='-', color='salmon')

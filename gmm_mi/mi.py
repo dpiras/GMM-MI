@@ -79,8 +79,6 @@ class EstimateMI:
         and ignore cross-validation.
         
     (not inherited)
-    return_lcurves : bool, default=False
-        Whether to return the loss curves or not (for debugging purposes).
     verbose : bool, default=False
         Whether to print useful procedural statements.
         
@@ -98,15 +96,12 @@ class EstimateMI:
     fixed_components : bool
         Set to True only if the user fixes a number of GMM components > 0.
     """
-    def __init__(self, gmm_fit_params=None, select_components_params=None, mi_dist_params=None, 
-                 return_lcurves=False, verbose=False): 
+    def __init__(self, gmm_fit_params=None, select_components_params=None, mi_dist_params=None, verbose=False): 
         self.gmm_fit_params = gmm_fit_params if gmm_fit_params else GMMFitParamHolder()
         self.sel_comp_params = select_components_params if select_components_params else SelectComponentsParamHolder()
         self.mi_dist_params = mi_dist_params if mi_dist_params else MIDistParamHolder()
        
-        self.return_lcurves = return_lcurves
         self.verbose = verbose
-
         self.converged = False
         self.best_metric = -np.inf
         self.patience_counter = 0
@@ -147,7 +142,10 @@ class EstimateMI:
                                                                    patience=0)
             gmm = single_fit(X=self.X, n_components=n_components, reg_covar=self.reg_covar, 
                              threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
-                             w_init=w_init, m_init=m_init, p_init=p_init)                
+                             w_init=w_init, m_init=m_init, p_init=p_init)  
+            # this is an extra fit we make, so we also check if this converged
+            convergence_flag = False if gmm.n_iter_ <= 2 else True
+            self.results_dict[n_components]['convergence_flags'].append(convergence_flag)            
             if self.metric_method == 'aic':
                 # negative since we maximise the metric
                 metric = -gmm.aic(self.X)
@@ -296,7 +294,7 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
 
-    def fit(self, X):
+    def fit(self, X, return_lcurves=False):
         """Calculate mutual information (MI) distribution.
         The first part performs density estimation of the data using GMMs and k-fold cross-validation.
         The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
@@ -306,7 +304,9 @@ class EstimateMI:
         ----------  
         X : array-like of shape (n_samples, 2)
             Samples from the joint distribution of the two variables whose MI is calculated.
-                          
+        return_lcurves : bool, default=False
+            Whether to return the loss curves or not (for debugging purposes).                          
+        
         Returns
         ----------
         MI_mean : float
@@ -353,7 +353,19 @@ class EstimateMI:
                 if self.verbose:
                     print(f'Convergence reached at {best_components} GMM components.') 
                     print(f'Starting MI integral estimation...') 
-                
+
+                # check if fits actually went on for a good amount of iterations
+                convergence_flags = [self.results_dict[n_c]['convergence_flags'] 
+                                     for n_c in range(1, self.best_components+1)]
+                # checking if all elements are False; in this case, a warning should be raised
+                if not np.sum(convergence_flags): 
+                    warnings.warn(
+                        f"All CV GMM fits converged only after their second iteration for all components; "
+                        "this is usually suspicious, and might be a symptom of a bad fit. "
+                        "Plot the loss curves as described in the walkthrough, and try reducing threshold_fit, "
+                        "or with a different init_type.",
+                        ConvergenceWarning,
+                    )                    
                 # get MI distribution
                 MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
                                                              w_init=w_init, m_init=m_init, p_init=p_init)
@@ -375,7 +387,7 @@ class EstimateMI:
         if self.verbose:
             print('MI estimation completed, returning mean and standard deviation.')
             
-        if self.return_lcurves:
+        if return_lcurves:
             return MI_mean, MI_std, self.lcurves        
         else:
             return MI_mean, MI_std    
