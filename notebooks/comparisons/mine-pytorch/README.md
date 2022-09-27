@@ -1,4 +1,4 @@
-# Mutual Information Neural Estimation
+# Mutual Information Neural Estimation (slightly edited by D. Piras for GMM-MI)
 
 ## Why is this cool
 
