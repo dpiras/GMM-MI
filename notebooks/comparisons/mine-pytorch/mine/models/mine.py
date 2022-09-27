@@ -9,8 +9,6 @@ from torch.autograd import Variable
 from torchvision import datasets
 from torchvision.transforms import transforms
 
-from mine.models.gan import GAN
-
 from mine.datasets import FunctionDataset, MultivariateNormalDataset
 from mine.models.layers import ConcatLayer, CustomSequential
 
@@ -191,7 +189,7 @@ class MutualInformationEstimator(pl.LightningModule):
             'test_loss': loss, 'test_mi': -loss
         }
 
-    def test_end(self, outputs):
+    def test_epoch_end(self, outputs):
         avg_mi = torch.stack([x['test_mi']
                               for x in outputs]).mean().detach().cpu().numpy()
         tensorboard_logs = {'test_mi': avg_mi}
@@ -199,7 +197,6 @@ class MutualInformationEstimator(pl.LightningModule):
         self.avg_test_mi = avg_mi
         return {'avg_test_mi': avg_mi, 'log': tensorboard_logs}
 
-    @pl.data_loader
     def train_dataloader(self):
         if self.train_loader:
             return self.train_loader
@@ -210,7 +207,6 @@ class MutualInformationEstimator(pl.LightningModule):
             batch_size=self.kwargs['batch_size'], shuffle=True)
         return train_loader
 
-    @pl.data_loader
     def test_dataloader(self):
         if self.test_loader:
             return self.train_loader
@@ -319,61 +315,6 @@ def rho_experiment():
     plt.plot(res[:, 0], res[:, 2], linestyle='--', label='True MI')
     plt.legend()
     plt.show()
-
-
-def gan_experiment():
-
-    batch_size = 256
-    kwargs = {}
-
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=True, download=True,
-                       transform=transforms.Compose([
-                           transforms.ToTensor(),
-                           transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=batch_size, shuffle=True, **kwargs)
-
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('../data', train=False, transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307,), (0.3081,))
-        ])),
-        batch_size=batch_size, shuffle=True, **kwargs)
-
-    img, label = next(iter(train_loader))
-
-    output_dim = 28*28
-    input_dim = 100
-    lr = 2e-3
-    print_every = 100
-
-    mi_model = T(output_dim, 1)
-
-    mi_estimator = Mine(mi_model, loss='mine').to(device)
-    opt_mi = torch.optim.Adam(mi_estimator.parameters(), lr=lr)
-
-    model = GAN(input_dim, output_dim, conditional_dim=1,
-                mi_estimator=mi_estimator, device=device, __lambda__=0.0).to(device)
-
-    epochs = 100
-    opt_g = torch.optim.Adam(model.parameters(), lr=lr)
-    opt_d = torch.optim.Adam(model.parameters(), lr=lr)
-
-    for epoch in range(epochs):
-        for ix, (img, label) in enumerate(train_loader):
-
-            if device == 'cuda':
-                label = label.float().cuda()
-                img = img.cuda()
-
-            d_loss, generator_loss = model.loss_fn(
-                img, opt_g, opt_d, opt_mi, conditional=label)
-
-            if ix % print_every == 0:
-                prct = (ix + 2) * batch_size/(batch_size * len(train_loader))
-                print(
-                    f"Epoch {epoch} [{(ix + 2) * batch_size}/{batch_size * len(train_loader)}] [{100*prct:.3}%] Loss (d/g): [{d_loss.item():.3}/{generator_loss.item():.3}]")
 
 
 if __name__ == '__main__':
