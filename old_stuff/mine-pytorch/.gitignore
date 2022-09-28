@@ -1,6 +1,0 @@
-__pycache__/
-.ipynb_checkpoints/
-lightning_logs/
-results/
-.vscode/
-*.egg-info/
