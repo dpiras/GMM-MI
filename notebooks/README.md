@@ -5,6 +5,7 @@ In this folder we provide a [first walkthrough of GMM-MI](https://github.com/dpi
 ## List of other available resources
 
 - [`comparisons`](https://github.com/dpiras/MI_estimation/blob/main/notebooks/comparisons/): contains all comparisons between GMM-MI, KSG and MINE, as well as a comparison of various stopping criteria for selecting the number of GMM components.
-- [`synthetic_GMMs`](https://github.com/dpiras/MI_estimation/blob/main/notebooks/synthetic_GMMs/): contains the notebooks to reproduce the results of GMM-MI on the synthetic GMMs presented in the paper.
+- [`invariance_bias`](https://github.com/dpiras/MI_estimation/blob/main/notebooks/invariance_bias/): contains the notebooks to reproduce the results of GMM-MI on the MI invariance under invertible transformations, as presented in the paper.
 - [`deep_learning`](https://github.com/dpiras/MI_estimation/blob/main/notebooks/deep_learning/): contains the notebooks to reproduce the application of GMM-MI to interpret the latent space of deep representation learning.
+- [`synthetic_GMMs`](https://github.com/dpiras/MI_estimation/blob/main/notebooks/synthetic_GMMs/): contains the notebooks to validate GMM-MI on synthetic GMMs (not presentd in the paper).
 
