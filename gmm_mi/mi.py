@@ -78,10 +78,6 @@ class EstimateMI:
         the number of components, and ignore this. Else, use this specified number of components,
         and ignore cross-validation.
         
-    (not inherited)
-    verbose : bool, default=False
-        Whether to print useful procedural statements.
-        
     Attributes
     ----------
     converged : bool
@@ -96,12 +92,11 @@ class EstimateMI:
     fixed_components : bool
         Set to True only if the user fixes a number of GMM components > 0.
     """
-    def __init__(self, gmm_fit_params=None, select_components_params=None, mi_dist_params=None, verbose=False): 
+    def __init__(self, gmm_fit_params=None, select_components_params=None, mi_dist_params=None): 
         self.gmm_fit_params = gmm_fit_params if gmm_fit_params else GMMFitParamHolder()
         self.sel_comp_params = select_components_params if select_components_params else SelectComponentsParamHolder()
         self.mi_dist_params = mi_dist_params if mi_dist_params else MIDistParamHolder()
        
-        self.verbose = verbose
         self.converged = False
         self.best_metric = -np.inf
         self.patience_counter = 0
@@ -294,7 +289,7 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
 
-    def fit(self, X, return_lcurves=False):
+    def fit(self, X, return_lcurves=False, verbose=False):
         """Calculate mutual information (MI) distribution.
         The first part performs density estimation of the data using GMMs and k-fold cross-validation.
         The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
@@ -306,7 +301,9 @@ class EstimateMI:
             Samples from the joint distribution of the two variables whose MI is calculated.
         return_lcurves : bool, default=False
             Whether to return the loss curves or not (for debugging purposes).                          
-        
+        verbose : bool, default=False
+            Whether to print useful procedural statements.
+                
         Returns
         ----------
         MI_mean : float
@@ -319,6 +316,7 @@ class EstimateMI:
         """
         assert X.shape[1] == 2, f"The shape of the data must be (n_samples, 2), found {X.shape}"    
         self.X = X
+        self.verbose = verbose
         if self.verbose:
             print('Starting cross-validation procedure to select the number of GMM components...')
         for n_components in range(1, self.max_components+1):
@@ -487,7 +485,7 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
        
-    def fit_categorical(self, X, y):
+    def fit_categorical(self, X, y, verbose=False):
         """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
         The first part performs density estimation of the conditional distributions, using GMMs and k-fold cross-validation.
         The second part uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
@@ -500,7 +498,9 @@ class EstimateMI:
             Samples of the continuous variable.
         y : array-like of shape (n_samples)   
             Categorical values corresponding to X.
-        
+        verbose : bool, default=False
+            Whether to print useful procedural statements.
+            
         Returns
         ----------
         MI_mean : float
@@ -514,6 +514,7 @@ class EstimateMI:
         self.X = X           
         self.y = y 
         self.category_values = len(np.unique(y))
+        self.verbose = verbose
 
         self.category_best_params = [] # used to store parameters of each GMM fit
         for category_value in range(self.category_values):
