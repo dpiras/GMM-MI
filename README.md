@@ -7,8 +7,8 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 To install GMM-MI, we currently recommend the following steps:
 1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (we recommend creating a custom `conda` environment) 
 2. (optional) `conda activate gmm_mi` (activate it)
-3. `git clone https://github.com/dpiras/MI_estimation.git` (clone repository; with `https` you need to insert your GH credentials)
-4. `cd MI_estimation` (move into cloned folder)
+3. `git clone https://github.com/dpiras/GMM-MI.git` (clone repository; with `https` you need to insert your GH credentials)
+4. `cd GMM-MI` (move into cloned folder)
 5. `python setup.py install` (install `gmm_mi` and all its dependencies); alternatively, `pip install .` should also work.
 6. `pytest` (to make sure the installation worked correctly)
 
@@ -16,7 +16,7 @@ We will make the package `pip` installable once we make the repository public, a
 
 ## Usage
 
-To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data. You can find an example application of GMM-MI in the next section, and a more complete walkthrough, with common scenarios and possible pitfalls, in this [notebook](https://github.com/dpiras/MI_estimation/blob/main/notebooks/walkthrough_and_pitfalls.ipynb). A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/MI_estimation/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
+To use GMM-MI, you simply need to import the class `EstimateMI`, choose the hyperparameters and fit your data. You can find an example application of GMM-MI in the next section, and a more complete walkthrough, with common scenarios and possible pitfalls, in this [notebook](https://github.com/dpiras/GMM-MI/blob/main/notebooks/walkthrough_and_pitfalls.ipynb). A description of the hyperparameters that you can play with can be found [here](https://github.com/dpiras/GMM-MI/blob/main/gmm_mi/mi.py#L10), and we discuss a few of them [below](#hyperparameter-description).
 
 ## Example
 
@@ -56,7 +56,7 @@ To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHold
                               mi_dist_params=mi_dist_params)
     MI_mean, MI_std = mi_estimator.fit(X)
 
-This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/MI_estimation/blob/main/notebooks).
+This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/GMM-MI/blob/main/notebooks).
 
 ## Hyperparameter description
 Here we report the most important hyperparameters that are used in GMM-MI.
@@ -107,7 +107,7 @@ Here we report the most important hyperparameters that are used in GMM-MI.
 
 ## Contributing and contacts
 
-Feel free to [fork](https://github.com/dpiras/MI_estimation/fork) this repository to work on it; otherwise, please [raise an issue](https://github.com/dpiras/MI_estimation/issues) or contact [Davide Piras](mailto:dr.davide.piras@gmail.com).
+Feel free to [fork](https://github.com/dpiras/GMM-MI/fork) this repository to work on it; otherwise, please [raise an issue](https://github.com/dpiras/GMM-MI/issues) or contact [Davide Piras](mailto:dr.davide.piras@gmail.com).
 
 ## Citation
 If you use GMM-MI, please cite the corresponding paper:
@@ -122,8 +122,8 @@ If you use GMM-MI, please cite the corresponding paper:
 
 ## License
 
-GMM-MI is released under the GPL-3 license - see [LICENSE](https://github.com/dpiras/MI_estimation/blob/main/LICENSE.txt)-, subject to 
-the non-commercial use condition - see [LICENSE_EXT](https://github.com/dpiras/MI_estimation/blob/main/LICENSE_EXT.txt).
+GMM-MI is released under the GPL-3 license - see [LICENSE](https://github.com/dpiras/GMM-MI/blob/main/LICENSE.txt)-, subject to 
+the non-commercial use condition - see [LICENSE_EXT](https://github.com/dpiras/GMM-MI/blob/main/LICENSE_EXT.txt).
 
      GMM-MI
      Copyright (C) 2022 Davide Piras & contributors

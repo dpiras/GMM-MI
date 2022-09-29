@@ -9,7 +9,7 @@ setup(
     author='Davide Piras',
     author_email='dr.davide.piras@gmail.com',
     description='Estimate mutual information distribution with Gaussian mixture models',
-    url='https://github.com/dpiras/MI_estimation',
+    url='https://github.com/dpiras/GMM-MI',
     license='GNU General Public License v3.0 (GPLv3)',
     packages=find_packages(),
     classifiers=[
