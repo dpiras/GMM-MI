@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.patches as mpatches
 
 def choose_ax(ax, figsize=(15, 10)):
     """Select panel where to plot. Normally returns the input panel; 
@@ -672,3 +673,151 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     if save_fig:
         plt.savefig(save_path, bbox_inches='tight')
     return texts
+
+
+def add_label_violin_plot(violin, label, labels):
+    """ Add labels to violin plot legend.
+    
+    Parameters
+    ----------
+    violin : instance of axes.Axes.violinplot class
+        The violin plot to add to the legend.
+    label : str
+        The label for the current violin plot.
+    labels : list
+        List containing all labels for all violins
+        
+    Returns
+    -------
+    labels : list
+        The updated list of labels.
+    """
+    color = violin["bodies"][0].get_facecolor().flatten()
+    labels.append((mpatches.Patch(color=color), label))
+    return labels
+
+def violin_plots(y_values, std_values, transformation, N_values,
+                 ksg_values=None, alpha=1, color='#d95f02', fontsize=27, widths=0.4):
+    """
+    
+    Parameters
+    ----------
+    y_values : array of shape (len(N_values), random_states)
+        Value of MI as returned by GMM-MI.
+    std_values : array of shape (len(N_values), random_states)
+        Values of MI standard deviations, as returned by GMM-MI.
+    transformation : str
+        The transformation that the data was subject to.
+    N_values : list
+        Contains the number of samples.
+    ksg_values : array of shape (len(N_values), random_states), default=None
+        Contains the KSG values, for comparison.    
+    alpha : float, default=1
+        Transparency, between 0 and 1.    
+    color : 'string', default='#d95f02'
+        Color of the GMM results.
+    fontsize : int, default=27
+        Size of label font.
+    widths : float, default=0.4
+        The percentage width of each violin plot; must be between 0 and 1.
+        
+    Returns
+    -------
+    None
+    """
+    labels = [] # for the legend
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 10), sharex=True)
+    # horizontal line
+    ax1.axhline(0, linewidth=3, c='black', linestyle='--')
+    ksg = False if ksg_values is None else True
+    
+    # first violin
+    if ksg:
+        parts = ax1.violinplot(y_values.T, positions=np.arange(1, 5, 1.5), showmeans=True, widths=widths)
+    else:
+        parts = ax1.violinplot(y_values.T, showmeans=True, widths=widths)
+        ax1.set_ylim((-0.19, 0.29))
+    for pc in parts['bodies']:
+        pc.set_facecolor(color)
+        pc.set_edgecolor('black')
+        pc.set_alpha(0.8)
+    for partname in ('cbars','cmins','cmaxes','cmeans'):
+        vp = parts[partname]
+        vp.set_edgecolor('black')
+        vp.set_linewidth(1.2)    
+    labels = add_label_violin_plot(parts, 'GMM-MI', labels)  
+    xy = [[l.vertices[:,0].mean(),l.vertices[0,1]] for l in parts['cmeans'].get_paths()]
+    xy = np.array(xy)
+    ax1.scatter(xy[:,0], xy[:,1], s=121, c="black", marker="x", zorder=3)
+    # make lines invisible
+    parts['cmeans'].set_visible(False) 
+
+    # possible ksg violin
+    if ksg:
+        parts = ax1.violinplot(ksg_values.T, positions=np.arange(0.5, 5, 1.5), showmeans=True, widths=widths)
+        for pc in parts['bodies']:
+            pc.set_facecolor('grey')
+            pc.set_edgecolor('black')
+            pc.set_alpha(0.8)
+        for partname in ('cbars','cmins','cmaxes','cmeans'):
+            vp = parts[partname]
+            vp.set_edgecolor('black')
+            vp.set_linewidth(1.2)    
+        labels = add_label_violin_plot(parts, 'KSG', labels)  
+        xy = [[l.vertices[:,0].mean(),l.vertices[0,1]] for l in parts['cmeans'].get_paths()]
+        xy = np.array(xy)
+        ax1.scatter(xy[:,0], xy[:,1], s=121, c="black", marker="x", zorder=3)
+        # make lines invisible
+        parts['cmeans'].set_visible(False) 
+    
+    # second violin
+    if ksg:
+        parts = ax2.violinplot(std_values.T, positions=np.arange(1, 5, 1.5), showmeans=True, widths=widths)
+    else:
+        parts = ax2.violinplot(std_values.T, showmeans=True, widths=widths)
+    for pc in parts['bodies']:
+        pc.set_facecolor(color)
+        pc.set_edgecolor('black')
+        pc.set_alpha(0.8)
+    for partname in ('cbars','cmins','cmaxes','cmeans'):
+        vp = parts[partname]
+        vp.set_edgecolor('black')
+        vp.set_linewidth(1.2)   
+    xy = [[l.vertices[:,0].mean(),l.vertices[0,1]] for l in parts['cmeans'].get_paths()]
+    xy = np.array(xy)
+    ax2.scatter(xy[:,0], xy[:,1], s=121, c="black", marker="x", zorder=3)
+    # make lines invisible
+    parts['cmeans'].set_visible(False) 
+       
+    # draw 1/sqrt(N) line
+    pivot = np.sqrt(N_values[2])*np.mean(std_values[2])
+    std_trend_values = [pivot/np.sqrt(N) for N in N_values]
+    if ksg:
+        ax2.plot(np.arange(1, 5, 1.5), std_trend_values, color='grey', 
+             label='$\\propto \\frac{1}{\sqrt{N}}$', lw=2, alpha=0.5)        
+    else:
+        ax2.plot(np.arange(1, 4), std_trend_values, color='grey', 
+             label='$\\propto \\frac{1}{\sqrt{N}}$', lw=2, alpha=0.5)
+    ax2.set_yscale('log')
+    ax2.set_ylim((10**(-2.5), 10**(-0.75))) 
+    
+    # final touches
+    set_ticksize(ax1)
+    set_ticksize(ax2)
+    if ksg:
+        ax2.set_xticks([0.75, 2.25, 3.75]) 
+    else:
+        ax2.set_xticks(np.arange(1, 4)) 
+    ax2.set_xticklabels(N_values, fontsize=fontsize)
+    ax2.set_xlabel('$N$', fontsize=fontsize)
+    ax1.set_ylabel('Bias [nat]', fontsize=fontsize)
+    ax2.set_ylabel('$\log_{10}(\sigma)$', fontsize=fontsize)
+    ax1.legend(*zip(*labels), loc='upper right', frameon=False, fontsize=25)
+    ax2.legend(loc='upper right', frameon=False, fontsize=28)
+
+    fig.align_ylabels()
+    fig.subplots_adjust(wspace=0, hspace=0)
+    if ksg:
+        plt.suptitle(f'{transformation.capitalize()}', fontsize=25)
+    else:
+        fig.savefig(f'./figures/{transformation}_transformation.pdf', bbox_inches='tight')
