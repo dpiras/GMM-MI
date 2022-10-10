@@ -16,9 +16,12 @@ class CrossValidation:
         Number of folds.
     n_inits : int, default=3
         Number of initializations.
-    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+    init_type : {'random', 'minmax', 'kmeans', 'randomized_kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each fit.
         See utils.initializations for more details.
+    cale : float, default=None
+        The scale to use to initialize the GMM parameters. Only used if 'init_type' is 'random', 
+        'minmax' or 'randomized_sklearn'.
     reg_covar : float, default=1e-15
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
     threshold_fit : float, default=1e-5
@@ -31,11 +34,12 @@ class CrossValidation:
         simply increase this value, or check that you really need such a small `threshold_fit` value.
     """
     def __init__(self, n_components, n_folds=2, n_inits=3, init_type='random_sklearn', 
-                 reg_covar=1e-15, threshold_fit=1e-5, max_iter=10000):
+                 scale=None, reg_covar=1e-15, threshold_fit=1e-5, max_iter=10000):
         self.n_components = n_components
         self.n_folds = n_folds
         self.n_inits = n_inits
         self.init_type = init_type
+        self.scale = scale
         self.reg_covar = reg_covar
         self.threshold_fit = threshold_fit
         self.max_iter = max_iter
@@ -66,7 +70,8 @@ class CrossValidation:
             # initialise with different seed random_state
             w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=random_state, 
                                                                    n_components=self.n_components, 
-                                                                   init_type=self.init_type)       
+                                                                   init_type=self.init_type,
+                                                                   scale=self.scale)       
             # perform k-fold CV
             for k_id, (train_indices, valid_indices) in enumerate(self.kf.split(X)):
                 X_training = X[train_indices]

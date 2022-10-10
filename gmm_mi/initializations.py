@@ -18,6 +18,8 @@ class Inits:
         self.init_type = init_type
         if scale is None and (self.init_type=='random' or self.init_type=='minmax'):
             self.scale = self.calculate_scale() 
+        elif scale is None and self.init_type=='randomized_kmeans':
+            self.scale = 1.0
         else:
             self.scale = scale
         self.reg_covar = reg_covar             
@@ -66,7 +68,7 @@ class Inits:
     
     def add_regularization(self, covariances):
         """Add regularization to the diagonal of the covariance matrices, to avoid singularities.
-
+        
         Parameters
         ----------
         covariances : array, shape (n_components, n_features, n_features)
@@ -112,7 +114,7 @@ class KmeansInit(Inits):
         return weights, means, covariances
     
     
-class RandomisedKmeansInit(Inits):
+class RandomizedKmeansInit(Inits):
     def calculate_parameters(self):
         from scipy.cluster.vq import kmeans2
         _, label = kmeans2(self.X, self.n_components, seed=self.random_state)
@@ -130,7 +132,7 @@ class RandomisedKmeansInit(Inits):
         # after running k-means, we push the means according to their covariance;
         # this should reduce the risks of getting stuck in local optima
         for k in range(self.n_components):
-            means[k,:] = means[k,:] + self.random_state.multivariate_normal(np.zeros(self.n_features), 
+            means[k,:] = means[k,:] + self.scale*self.random_state.multivariate_normal(np.zeros(self.n_features), 
                                                                      covariances[k,:,:], size=1)
         return weights, means, covariances    
     
@@ -168,7 +170,7 @@ class KmeansSklearnInit(Inits):
         return weights, means, covariances
     
     
-_init_type_to_class_map = {'random': RandomInit, 'kmeans': KmeansInit, 'randomised_kmeans': RandomisedKmeansInit,
+_init_type_to_class_map = {'random': RandomInit, 'kmeans': KmeansInit, 'randomized_kmeans': RandomizedKmeansInit,
                            'minmax': MinMaxInit, 'random_sklearn': RandomSklearnInit, 'kmeans_sklearn': KmeansSklearnInit}
 
 def initialize_parameters(X, random_state=None, n_components=1, init_type='random_sklearn', scale=None, reg_covar=0):
@@ -182,7 +184,7 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         A random seed used for the method chosen to initialize the parameters.
     n_components : int, default=1
         Number of GMM components to initialize.
-    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+    init_type : {'random', 'minmax', 'kmeans', 'randomized_kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions.
         Must be one of:
             'random': weights are set uniformly, covariances are proportional to identity (with prefactor s^2). 
@@ -190,8 +192,8 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
             'minmax': same as above, but means are distributed randomly over the range that is covered by data.
             'kmeans': k-means clustering run as in Algorithm 1 from Bloemer & Bujna (arXiv:1312.5946), 
             as implemented by Melchior & Goulding (arXiv:1611.05806).
-            'randomised_kmeans': same as k-means, but then the means are pushed around 
-            for increased likelihood of avoiding local minima.            
+            'randomized_kmeans': same as k-means, but then the means are pushed around for increased likelihood 
+            of avoiding local minima. The 'scale' is used to quantify the mean push, and can be specified by the user (defaults to 1).
             'random_sklearn': responsibilities are initialized randomly, i.e. every point is randomly assigned to a component.
             Weights, means and covariances are then calculated by performing an M-step on these responsibilities:
             this means that weights are calculated as the average probability that a sample belongs to each components, while
@@ -204,6 +206,7 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         If scale is not given, it will be set such that the volume of all components completely fills the space covered by data.
     reg_covar : float, default=0
         Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
+        In GMM-MI, the regularisation term is added during training only, and not in the initializations.
         
     Returns
     ----------
@@ -216,7 +219,7 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
     precisions : array, shape (n_components, n_features, n_features)
         The initial precision matrices of the GMM model (inverse of covariance).  
     """
-    if init_type in ['random', 'kmeans', 'randomised_kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn']:
+    if init_type in ['random', 'kmeans', 'randomized_kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn']:
         InitClass = _init_type_to_class_map[init_type]
         init_class = InitClass(X=X, random_state=random_state, n_components=n_components, 
                                init_type=init_type, scale=scale, reg_covar=reg_covar)
@@ -224,7 +227,7 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         covariances = init_class.add_regularization(covariances=covariances)
     else:
         raise ValueError(f"Initialisation type not known. It should be one of "
-                         f"'random', 'kmeans', 'randomised_kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
+                         f"'random', 'kmeans', 'randomized_kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
 
     # all matrices can be inverted at once
     precisions = np.linalg.inv(covariances)

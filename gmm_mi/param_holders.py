@@ -2,9 +2,10 @@ class GMMFitParamHolder:
     """Container class to provide the hyperparameters pertaining to all GMM fits.
     See mi.py for the meaning of each parameter.
     """
-    def __init__(self, init_type="random_sklearn", threshold_fit=1e-5,
-                 reg_covar=1e-15, max_iter=10000):
+    def __init__(self, init_type="random_sklearn", scale=None, 
+                 threshold_fit=1e-5, reg_covar=1e-15, max_iter=10000):
         self.init_type = init_type
+        self.scale = scale
         self.threshold_fit = threshold_fit
         self.reg_covar = reg_covar
         self.max_iter = max_iter

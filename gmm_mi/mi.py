@@ -15,8 +15,11 @@ class EstimateMI:
     Parameters
     ----------
     (inherited from GMMFitParamHolder, passed as gmm_fit_params)
-    init_type : {'random', 'minmax', 'kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
+    init_type : {'random', 'minmax', 'kmeans', 'randomized_kmeans', 'random_sklearn', 'kmeans_sklearn'}, default='random_sklearn'
         The method used to initialize the weights, the means, the covariances and the precisions in each CV fit.
+        See utils.initializations for more details.
+    scale : float, default=None
+        The scale used for 'random', 'minmax' and 'randomized_kmeans' initializations. Not used in all other cases.
         See utils.initializations for more details.
     threshold_fit : float, default=1e-5
         The log-likelihood threshold on each GMM fit used to choose when to stop training.
@@ -326,7 +329,7 @@ class EstimateMI:
                 else:
                     self.converged = True
             current_results_dict = CrossValidation(n_components=n_components, n_folds=self.n_folds, 
-                                                   max_iter=self.max_iter, init_type=self.init_type, 
+                                                   max_iter=self.max_iter, init_type=self.init_type, scale=self.scale,
                                                    n_inits=self.n_inits, threshold_fit=self.threshold_fit, 
                                                    reg_covar=self.reg_covar).fit(self.X)
             self.results_dict[n_components] = current_results_dict
@@ -353,8 +356,11 @@ class EstimateMI:
                     print(f'Starting MI integral estimation...') 
 
                 # check if fits actually went on for a good amount of iterations
-                convergence_flags = [self.results_dict[n_c]['convergence_flags'] 
-                                     for n_c in range(1, self.best_components+1)]
+                if self.fixed_components:
+                    convergence_flags = self.results_dict[self.best_components]['convergence_flags'] 
+                else:
+                    convergence_flags = [self.results_dict[n_c]['convergence_flags'] 
+                                         for n_c in range(1, self.best_components+1)]
                 # checking if all elements are False; in this case, a warning should be raised
                 if not np.sum(convergence_flags): 
                     warnings.warn(
@@ -537,7 +543,7 @@ class EstimateMI:
                     else:
                         self.converged = True
                 current_results_dict = CrossValidation(n_components=n_components, n_folds=self.n_folds, 
-                                                       max_iter=self.max_iter, init_type=self.init_type, 
+                                                       max_iter=self.max_iter, init_type=self.init_type, scale=self.scale,
                                                        n_inits=self.n_inits, threshold_fit=self.threshold_fit, 
                                                        reg_covar=self.reg_covar).fit(current_latents)
                 self.results_dict[n_components] = current_results_dict

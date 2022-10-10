@@ -7,7 +7,6 @@ from sklearn.mixture import GaussianMixture as GMM
 from sklearn.mixture._gaussian_mixture import _estimate_log_gaussian_prob, _compute_precision_cholesky, _estimate_gaussian_covariances_full
 from sklearn.utils import check_random_state
 from sklearn.exceptions import ConvergenceWarning
-from gmm_mi.initializations import initialize_parameters
 import warnings
 
 
