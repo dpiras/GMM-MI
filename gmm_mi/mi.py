@@ -321,7 +321,10 @@ class EstimateMI:
         self.X = X
         self.verbose = verbose
         if self.verbose:
-            print('Starting cross-validation procedure to select the number of GMM components...')
+            if not self.fixed_components:
+                print('Starting cross-validation procedure to select the number of GMM components...')
+            else:
+                print(f'Using {self.fixed_components_number} GMM components, as specified in input.')
         for n_components in range(1, self.max_components+1):
             if self.fixed_components:
                 if n_components < self.fixed_components_number:
@@ -369,22 +372,32 @@ class EstimateMI:
                         "Plot the loss curves as described in the walkthrough, and try reducing threshold_fit, "
                         "or with a different init_type.",
                         ConvergenceWarning,
-                    )                    
+                    )  
+                    
                 # get MI distribution
                 MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
                                                              w_init=w_init, m_init=m_init, p_init=p_init)
                 break
 
-            # in the unlikely case that we have not reached enough GMM components
-            # we raise a ConvergenceWarning and calculate MI with 1 component only
+            # in the unlikely case that we have not reached enough GMM components,
+            # we raise a ConvergenceWarning 
             if n_components == self.max_components:
-                warnings.warn(f"Convergence in the number of GMM components was not reached, "\
-                              f"so MI will be calculated with 1 component only. "\
+                self.reached_max_components = True
+                warnings.warn(f"Convergence in the number of GMM components was not reached. "\
                               f"Try increasing max_components or threshold_components, "\
                               f"or decreasing the patience.", ConvergenceWarning)
-                best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=1,    
+                best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=self.max_components,    
                                                                                                   fixed_components=True,
                                                                                                   patience=0)
+                # these are assigned to self only to possibly plot the final model
+                # in `plot_fitted_model`.
+                self.best_components = best_components
+                self.best_seed = best_seed
+                self.w_init = w_init
+                self.m_init = m_init
+                self.p_init = p_init
+                
+                # get MI distribution               
                 MI_mean, MI_std = self._perform_bootstrap(n_components=best_components, random_state=best_seed, 
                                              w_init=w_init, m_init=m_init, p_init=p_init)                
         
@@ -414,7 +427,8 @@ class EstimateMI:
         ax : instance of the axes.Axes class from pyplot
             The output panel.
         """
-        assert self.converged == True, "You can only plot the fitted model after MI has "\
+        assert (self.converged == True or self.reached_max_components == True), \
+                                       "You can only plot the fitted model after MI has "\
                                        "been estimated; call .fit() on your data first!"
         from gmm_mi.utils.plotting import plot_gmm_contours
         gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
