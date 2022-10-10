@@ -8,6 +8,6 @@ In this folder we share notebooks with example use cases of GMM-MI on synthetic 
 - [1_MI_D3_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/1_MI_D3_significance.ipynb): residual analysis for a dataset with 3 components, D3.
 - [2_MI_D3p_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/2_MI_D3p_significance.ipynb): residual analysis for another dataset with 3 components, D3', where the components are more separated.
 - [3_MI_D5_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/3_MI_D5_significance.ipynb): residual analysis for a dataset with 5 components, D5.
-- [4_MI_D5_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/4_MI_D5p_significance.ipynb): residual analysis for a dataset with 5 components, D5'. This is identical to D5, but one component is shifted to the right.
+- [4_MI_D5p_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/4_MI_D5p_significance.ipynb): residual analysis for a dataset with 5 components, D5'. This is identical to D5, but one component is shifted to the right.
 - [5_MI_D30_significance](https://github.com/dpiras/GMM-MI/blob/main/notebooks/synthetic_GMMs/5_MI_D30_significance.ipynb): residual analysis for another dataset with 3 components, D30 or D3_rhoneq0, where each component has a correlation coefficient different than 0.
 
