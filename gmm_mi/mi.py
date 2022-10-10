@@ -174,7 +174,7 @@ class EstimateMI:
         best_components : int
             Best number of components to fit (either the input ones, or fewer if it's during patience).
         best_seed : int
-            Best seed of the initialisation that led to the highest validation log-likelihood.
+            Best seed of the initialization that led to the highest validation log-likelihood.
         w_init : array-like of shape (n_components)
             Best GMM weights (based on cross-validation), to be used as initial point of further fits.
         m_init : array-like of shape (n_components, 2)
@@ -254,7 +254,7 @@ class EstimateMI:
         n_components : int
             Number of GMM components to fit.
         random_state : int, default=None
-            Random seed used to initialise the GMM model. 
+            Random seed used to initialize the GMM model. 
             If initial GMM parameters are provided, used only to fix the trained model samples across trials.
         w_init : array-like of shape (n_components)
             Initial GMM weights.
@@ -266,9 +266,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution.
+            Mean of the MI distribution, in nat.
         MI_std : float
-            Standard deviation of the MI distribution.
+            Standard deviation of the MI distribution, in nat.
         """ 
         if self.n_bootstrap < 1:
             do_bootstrap = False
@@ -293,7 +293,7 @@ class EstimateMI:
         return MI_mean, MI_std
 
     def fit(self, X, return_lcurves=False, verbose=False):
-        """Calculate mutual information (MI) distribution.
+        """Calculate mutual information (MI) distribution (in nat).
         The first part performs density estimation of the data using GMMs and k-fold cross-validation.
         The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
         The MI uncertainty is calculated through bootstrap.
@@ -310,9 +310,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution.
+            Mean of the MI distribution, in nat.
         MI_std : float
-            Standard deviation of the MI distribution.
+            Standard deviation of the MI distribution, in nat.
         loss_curves : list of lists
             Loss curves of the models trained during cross-validation; currently used for debugging.
             Only returned if return_lcurves is true.
@@ -466,9 +466,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution.
+            Mean of the MI distribution, in nat.
         MI_std : float
-            Standard deviation of the MI distribution. None if bootstrap==False.
+            Standard deviation of the MI distribution, in nat. None if bootstrap==False.
         """  
         if self.n_bootstrap < 1:
             do_bootstrap = False
@@ -524,9 +524,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution.
+            Mean of the MI distribution, in nat.
         MI_std : float
-            Standard deviation of the MI distribution.
+            Standard deviation of the MI distribution, in nat.
         """
         assert len(X.shape) == 1, f"The shape of the continuous data must be (n_samples), found {X.shape}"    
         assert len(y.shape) == 1, f"The shape of the categorical data must be (n_samples), found {y.shape}"

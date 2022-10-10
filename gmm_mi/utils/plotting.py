@@ -331,7 +331,7 @@ def histogram_estimates(estimates, ax=None, bins=20, alpha=1, title='',
             )
     ax.axvline(0, ls='--', lw=lw, c='black')
     set_ticksize(ax)
-    set_titles(ax, xlabel='MI [nats]', ylabel='Counts', title=title)
+    set_titles(ax, xlabel='MI [nat]', ylabel='Counts', title=title)
     set_legend(ax, fontsize=legendsize)
 
 

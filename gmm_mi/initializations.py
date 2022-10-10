@@ -226,7 +226,7 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         weights, means, covariances = init_class.calculate_parameters()
         covariances = init_class.add_regularization(covariances=covariances)
     else:
-        raise ValueError(f"Initialisation type not known. It should be one of "
+        raise ValueError(f"Initialization type not known. It should be one of "
                          f"'random', 'kmeans', 'randomized_kmeans', 'minmax', 'random_sklearn', 'kmeans_sklearn'; found '{init_type}'") 
 
     # all matrices can be inverted at once

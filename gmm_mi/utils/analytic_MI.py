@@ -14,7 +14,7 @@ def calculate_MI_D1_analytical(covariance_matrix):
     Returns
     ----------
     MI : float
-        The value of mutual information in nats.
+        The value of mutual information in nat.
     """
     assert covariance_matrix.shape==(2, 2), "Covariance matrix must be of shape (2, 2)."
     MI = -0.5*np.log(1-(covariance_matrix[0, 1] / (np.sqrt(covariance_matrix[0, 0]*covariance_matrix[1, 1])))**2)
@@ -32,7 +32,7 @@ def calculate_MI_gammaexp_analytical(alpha):
     Returns
     ----------
     MI : float
-        The value of mutual information in nats.
+        The value of mutual information in nat.
     """
     # psi is the digamma function
     return psi(alpha+1) - np.log(alpha)
@@ -49,7 +49,7 @@ def calculate_MI_weinman_analytical(alpha):
     Returns
     ----------
     MI : float
-        The value of mutual information in nats.
+        The value of mutual information in nat.
     """
     # psi is the digamma function
     if 0 < alpha < 0.5:

@@ -24,7 +24,7 @@ def single_fit(X, n_components, reg_covar=1e-15, threshold_fit=1e-5, max_iter=10
         so it is set to a high value. A warning is raised if this threshold is reached; in that case, 
         simply increase this value, or check that you really need such a small `threshold_fit` value.
     random_state : int, default=None
-        Random seed used to initialise the GMM model. 
+        Random seed used to initialize the GMM model. 
         If initial GMM parameters are provided, used only to fix the trained model samples across trials.
     w_init : array-like of shape (n_components)
         Initial GMM weights.

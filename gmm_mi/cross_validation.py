@@ -67,7 +67,7 @@ class CrossValidation:
                 Data on which CV is performed.
         """
         for random_state in range(self.n_inits):
-            # initialise with different seed random_state
+            # initialize with different seed random_state
             w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=random_state, 
                                                                    n_components=self.n_components, 
                                                                    init_type=self.init_type,
