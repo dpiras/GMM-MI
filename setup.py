@@ -26,8 +26,3 @@ setup(
                       'scipy>=1.7.1']
                       )
 
-# clean
-shutil.rmtree("dist", True)
-shutil.rmtree("build", True)
-shutil.rmtree("gmm_mi.egg-info", True)
-shutil.rmtree("__pycache__", True)
