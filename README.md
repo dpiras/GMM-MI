@@ -12,12 +12,9 @@ To install GMM-MI, follow these steps:
 1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (we recommend creating a custom `conda` environment) 
 2. (optional) `conda activate gmm_mi` (activate it)
 3. Install GMM-MI:
-
         pip install gmm-mi
         python3 -c 'from gmm_mi.mi import EstimateMI'
-
 or alternatively, clone the repository and install it:
-
         git clone https://github.com/dpiras/GMM-MI.git
         cd GMM-MI
         pip install . 
