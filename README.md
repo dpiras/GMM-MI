@@ -11,13 +11,19 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 To install GMM-MI, follow these steps:
 1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (we recommend creating a custom `conda` environment) 
 2. (optional) `conda activate gmm_mi` (activate it)
-3. `pip install gmm-mi`, or alternatively, clone the repository and install it:
+3. Install GMM-MI:
+
+        pip install gmm-mi
+        python3 -c 'from gmm_mi.mi import EstimateMI'
+
+or alternatively, clone the repository and install it:
 
         git clone https://github.com/dpiras/GMM-MI.git
         cd GMM-MI
         pip install . 
+        pytest 
 
-4. `pytest` (to make sure the installation worked correctly)
+The latter option will also give you access to Jupyter notebooks to get started with GMM-MI.
 
 ## Usage
 
