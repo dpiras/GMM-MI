@@ -24,6 +24,5 @@ setuptools.setup(
         'torchvision>=0.11.3',
 	'torch>=1.10.2',
         'scikit_learn>=0.22.1',
-        'pillow<7'
     ]
 )
