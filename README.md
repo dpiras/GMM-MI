@@ -8,15 +8,14 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 
 ## Installation
 
-To install GMM-MI, we currently recommend the following steps:
+To install GMM-MI, follow these steps:
 1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (we recommend creating a custom `conda` environment) 
 2. (optional) `conda activate gmm_mi` (activate it)
-3. `git clone https://github.com/dpiras/GMM-MI.git` (clone repository; with `https` you need to insert your GH credentials)
-4. `cd GMM-MI` (move into cloned folder)
-5. `python setup.py install` (install `gmm_mi` and all its dependencies); alternatively, `pip install .` should also work.
-6. `pytest` (to make sure the installation worked correctly)
-
-We will make the package `pip` installable once we make the repository public, and update these instructions.
+3. `pip install gmm-mi`, or alternatively (clone repository, and install it)
+    git clone https://github.com/dpiras/GMM-MI.git
+    cd GMM-MI
+    pip install . 
+4. `pytest` (to make sure the installation worked correctly)
 
 ## Usage
 
