@@ -24,7 +24,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.9',
+    python_requires='>=3.8',
     install_requires=['pytest',
                       'tqdm',
                       'matplotlib>=3.1.2',

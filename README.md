@@ -8,7 +8,7 @@ Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate 
 
 ## Installation
 
-To install GMM-MI, you will need `python>=3.9`; then follow these steps:
+To install GMM-MI, follow these steps:
 1. (optional) `conda create -n gmm_mi python=3.9 jupyter` (create a custom `conda` environment with python 3.9) 
 2. (optional) `conda activate gmm_mi` (activate it)
 3. Install GMM-MI:
@@ -23,7 +23,7 @@ To install GMM-MI, you will need `python>=3.9`; then follow these steps:
         pip install . 
         pytest 
 
-The latter option will also give you access to Jupyter notebooks to get started with GMM-MI.
+The latter option will also give you access to Jupyter notebooks to get started with GMM-MI. Note that all experiments were run with `python==3.9`, and that GMM-MI requires at least `python>=3.8`. 
 
 ## Usage
 
