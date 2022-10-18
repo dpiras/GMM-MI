@@ -811,7 +811,7 @@ def violin_plots(y_values, std_values, transformation, N_values,
     ax2.set_xticklabels(N_values, fontsize=fontsize)
     ax2.set_xlabel('$N$', fontsize=fontsize)
     ax1.set_ylabel('Bias [nat]', fontsize=fontsize)
-    ax2.set_ylabel('$\log_{10}(\sigma)$', fontsize=fontsize)
+    ax2.set_ylabel('$\sigma$ [nat]', fontsize=fontsize)
     ax1.legend(*zip(*labels), loc='upper right', frameon=False, fontsize=25)
     ax2.legend(loc='upper right', frameon=False, fontsize=28)
 
