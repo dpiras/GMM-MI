@@ -84,6 +84,15 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         The constant term added to the diagonal of the covariance matrices to avoid singularities.
         Smaller values will increase the chances of singular matrices, but will have a smaller
         impact on the final MI estimates.
+    init_type : {'random', 'minmax', 'kmeans', 'randomized_kmeans', 'random_sklearn', 
+                 'kmeans_sklearn'}, default='random_sklearn'
+        The method used to initialize the weights, the means, the covariances and the precisions
+        in each fit during cross-validation. See utils.initializations for more details.
+    scale : float, default=None
+        The scale used for 'random', 'minmax' and 'randomized_kmeans' initializations. 
+        This hyperparameter is not used in all other cases, but it is useful if you roughly know 
+        in advance the scale of your data, and can accelerate convergence.
+        See utils.initializations for more details.
 
     (controlled by ChooseComponentParamHolder, passed as select_component_params)
     n_inits : int, default=3
