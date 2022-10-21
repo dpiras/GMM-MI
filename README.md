@@ -52,6 +52,8 @@ This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value o
     ax.scatter(X[:, 0], X[:, 1], label='Input data')
     fig, ax = mi_estimator.plot_fitted_model(ax=ax)
 
+Since we return the `ax` object, you can adapt the plot to your stylistic needs; for example, if you use a `matplotlibrc` configuration file and want to use your pre-definied settings for the legend, just call `ax.legend()` after plotting. 
+
 To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 
     from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
