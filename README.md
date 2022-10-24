@@ -47,12 +47,15 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
 This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. If you want to visualize the fitted model over your input data, you can run:
     
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(1, 1, figsize=(11, 11))
+    fig, ax = plt.subplots(1, 1, figsize=(10, 10))
     # X is the array with the input data
     ax.scatter(X[:, 0], X[:, 1], label='Input data')
-    fig, ax = mi_estimator.plot_fitted_model(ax=ax)
-
-Since we return the `ax` object, you can adapt the plot to your stylistic needs; for example, if you use a `matplotlibrc` configuration file and want to use your pre-definied settings for the legend, just call `ax.legend()` after plotting. 
+    # the extra arguments can be changed
+    ax = mi_estimator.plot_fitted_model(ax=ax, color='salmon', alpha=0.8, linewidth=4)
+    ax.tick_params(axis='both', which='both', labelsize=20)
+    ax.set_xlabel('X1', fontsize=30)
+    ax.set_ylabel('X2', fontsize=30)
+    ax.legend(fontsize=25, frameon=False);    
 
 To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 

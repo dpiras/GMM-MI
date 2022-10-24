@@ -162,11 +162,10 @@ def find_contours(contour_levels):
     return ranges
         
     
-def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
-                 weight_size=1000, alpha=None, color=None, label=None, marker='X',
-                 component_count=0, legendsize=30, loc='best', frameon=False, **kwargs):
+def draw_ellipse(mean, covariance, weight, ax=None, marker='X', contour_levels=[2],
+                 weight_size=1000, label=None, component_count=0, **kwargs):
     """Draw the error ellipse corresponding to a given mean vector and Gaussian covariance matrix.
-    Since this is don in the context of Gaussian mixture models (GMMs), the weight is also indicated 
+    Since this is done in the context of Gaussian mixture models (GMMs), the weight is also indicated 
     with a marker whose size is proportional to the weight value. Based on
     https://www.visiondummy.com/2014/04/draw-error-ellipse-representing-covariance-matrix/.
     
@@ -180,27 +179,17 @@ def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
         The weight associated with this GMM component.
     ax : instance of the axes.Axes class from pyplot, default='None'
         The panel where to draw the ellipse.    
+    marker : string, default='X'
+        Marker type for the centroid of the ellipse.
     contour_levels : list of integers, default=[2]
         The sigma levels whose contour are going to be drawn. 
         The integers can be only 1, 2 and 3.
     weight_size : float, default=1000
         The multiplier for the marker size (also proportional to the weight).   
-    alpha : float, default=None
-        Transparency, between 0 and 1.    
-    color : 'string', default=None
-        Color of the ellipse.
-    marker : string, default='X'
-        Marker type for the centroid of the ellipse.
     label : string, default=None
         Label associated to the ellipse.
     component_count : int, default=0
         A counter so that the label is printed only for the first component.
-    legendsize : int, default=30
-        Font size of the legend.
-    loc : string, default='best'
-        Legend position.
-    frameon : bool, default=False
-        Whether to frame the legend or not.
     kwargs : dictionary
         The extra keyword arguments to pass to the plotting function.    
         
@@ -208,7 +197,6 @@ def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
     -------
     None
     """
-    fig, ax = choose_ax(ax)
     assert covariance.shape == (2, 2), 'Each covariance matrix must be of shape (2, 2)!'
     # convert covariance to the parameters of the corresponding error ellipse
     angle, width, height = calculate_ellipse_params(covariance)
@@ -216,16 +204,12 @@ def draw_ellipse(mean, covariance, weight, ax=None, contour_levels=[2],
     contours = find_contours(contour_levels)   
     # draw the ellipse
     for contour in contours:
-        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle, color=color, fill=False, 
-                             alpha=alpha, label=label if component_count==0 else "", **kwargs))
-        ax.scatter(mean[0], mean[1],  marker=marker, color=color,
-                   s=weight_size*weight, alpha=alpha)
-    set_legend(ax, fontsize=legendsize, frameon=frameon)
+        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle, fill=False, 
+                             label=label if component_count==0 else "", **kwargs))
+        ax.scatter(mean[0], mean[1], s=weight_size*weight, marker=marker, **kwargs)
 
     
-def plot_gmm_contours(gmm, ax=None, color='salmon', alpha=0.8, 
-                      linewidth=4, fill=False, label='', xlabel='X1', ylabel='X2',
-                      **kwargs):
+def plot_gmm_contours(gmm, ax=None, fill=False, label='', xlabel='X1', ylabel='X2', **kwargs):
     """Draw the contour ellipses corresponding to a given Gaussian mixture model (GMM).
     
     Parameters
@@ -234,12 +218,6 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', alpha=0.8,
         The GMM whose contours are going to be displayed.
     ax : instance of the axes.Axes class from pyplot
         The panel where to plot the samples.   
-    color : string, default='salmon'
-        The color of the GMM contours.
-    alpha : float, default=0.8
-        Transparency of the contour lines; must be between 0 and 1.
-    linewidth : int, default=4
-        The width of the contour lines.
     fill : bool, default=False
         Whether to fill the contours or not.
     label : string, default=''
@@ -258,15 +236,10 @@ def plot_gmm_contours(gmm, ax=None, color='salmon', alpha=0.8,
     ax : instance of the axes.Axes class from pyplot
         The output panel.
     """
-    fig, ax = choose_ax(ax, figsize=(10, 10))
-            
     means, covariances, weights = gmm.means_, gmm.covariances_, gmm.weights_
     for component_count, (mean, covariance, weight) in enumerate(zip(means, covariances, weights)):
-        draw_ellipse(mean, covariance, weight, ax=ax, component_count=component_count, alpha=alpha, 
-                     color=color, linewidth=linewidth, label=label, **kwargs)  
-    set_ticksize(ax)
-    set_titles(ax, xlabel=xlabel, ylabel=ylabel)
-    return fig, ax
+        draw_ellipse(mean, covariance, weight, ax=ax, component_count=component_count, label=label, **kwargs)  
+    return ax
 
 
 def calculate_summary_and_significance(estimates):

@@ -434,8 +434,8 @@ class EstimateMI:
         gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
                  threshold_fit=self.threshold_fit, random_state=self.best_seed, max_iter=self.max_iter, 
                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
-        fig, ax = plot_gmm_contours(gmm, ax=ax, label='Fitted model', **kwargs)
-        return fig, ax
+        ax = plot_gmm_contours(gmm, ax=ax, label='Fitted model', **kwargs)
+        return ax
                
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
