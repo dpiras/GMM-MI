@@ -55,7 +55,7 @@ This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value o
     ax.tick_params(axis='both', which='both', labelsize=20)
     ax.set_xlabel('X1', fontsize=30)
     ax.set_ylabel('X2', fontsize=30)
-    ax.legend(fontsize=25, frameon=False);    
+    ax.legend(fontsize=25, frameon=False)    
 
 To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 
