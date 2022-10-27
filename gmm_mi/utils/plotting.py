@@ -580,7 +580,7 @@ def create_heatmap(data, row_labels, col_labels, fsize=30, ax=None,
 def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
                      textcolors=("black", "white"),
                      threshold=None, save_fig=False,
-                     save_path="", **textkw):
+                     save_path="", threshold=0.01, **textkw):
     """Used to annotate a previously-created heatmap.
 
     Parameters
@@ -604,7 +604,9 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
         Whether to save the annotated heatmap or not.
     save_path : string, default=""
         If save_fig is True, the path where to save the figure.
-    **kwargs
+    threshold : float, default=0.01
+        All values of MI below this are displayed as 0.
+    **textkw
         All other arguments are forwarded to each call to `text` used to create the text labels.
         
     Returns
@@ -637,7 +639,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     for i in range(data.shape[0]):
         for j in range(data.shape[1]):
             # ignore if value is too small
-            if data[i, j] < 0.01:
+            if data[i, j] < threshold:
                 text = im.axes.text(j, i, matplotlib.ticker.StrMethodFormatter("{x:.0f}")(data[i, j], None), **kw) 
             else:
                 text = im.axes.text(j, i, valfmt(data[i, j], None), **kw)
