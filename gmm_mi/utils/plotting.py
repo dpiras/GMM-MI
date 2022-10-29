@@ -204,7 +204,7 @@ def draw_ellipse(mean, covariance, weight, ax=None, marker='X', contour_levels=[
     contours = find_contours(contour_levels)   
     # draw the ellipse
     for contour in contours:
-        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle, fill=False, 
+        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle=angle, fill=False, 
                              label=label if component_count==0 else "", **kwargs))
         ax.scatter(mean[0], mean[1], s=weight_size*weight, marker=marker, **kwargs)
 
@@ -578,9 +578,8 @@ def create_heatmap(data, row_labels, col_labels, fsize=30, ax=None,
 
 
 def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
-                     textcolors=("black", "white"),
-                     threshold=None, save_fig=False,
-                     save_path="", threshold=0.01, **textkw):
+                     save_fig=False, save_path="", 
+                     threshold=0.01, **textkw):
     """Used to annotate a previously-created heatmap.
 
     Parameters
@@ -593,13 +592,6 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
         The format of the annotations inside the heatmap.  This should either
         use the string format method, e.g. "$ {x:.2f}", or be a
         `matplotlib.ticker.Formatter`.
-    textcolors : tuple, default=("black", "white")
-        A pair of colors.  The first is used for values below a threshold,
-        the second for those above.
-    threshold : float, default=None
-        Value in data units according to which the colors from textcolors are
-        applied.  If None (the default) uses the middle of the colormap as
-        separation.
     save_fig : bool, default=False
         Whether to save the annotated heatmap or not.
     save_path : string, default=""
@@ -617,12 +609,6 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
 
     if not isinstance(data, (list, np.ndarray)):
         data = im.get_array()
-        
-    # normalize the threshold to the images color range.
-    if threshold is not None:
-        threshold = im.norm(threshold)
-    else:
-        threshold = im.norm(data.max())/2.
 
     # set default alignment to center, but allow it to be overwritten by textkw.
     kw = dict(horizontalalignment="center",
