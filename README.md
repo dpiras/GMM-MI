@@ -4,7 +4,7 @@
   <img src="https://user-images.githubusercontent.com/25639122/195098930-93a9865b-a0c7-4792-9474-dc0d1056e358.png?raw=true" alt="GMM-MI_logo"/>
 </p>
 
-Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://dpiras.github.io/dm). Please [cite it](#citation) if you use it in your work!
+Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://arxiv.org/abs/2211.00024). Please [cite it](#citation) if you use it in your work!
 
 ## Installation
 
