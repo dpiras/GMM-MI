@@ -141,6 +141,7 @@ If you use GMM-MI, please cite the corresponding paper:
      @article{Piras22, 
           author = {Piras, Davide and Peiris, Hiranya V. and Pontzen, Andrew and Lucie-Smith, Luisa and Guo, Ningyuan and Nord, Brian},
           title = {A robust estimator of mutual information for deep learning interpretability},
+          journal = {arXiv e-prints},
           url = {https://arxiv.org/abs/2211.00024},
           doi = {10.48550/ARXIV.2211.00024},
           year = {2022}
