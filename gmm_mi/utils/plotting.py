@@ -162,8 +162,8 @@ def find_contours(contour_levels):
     return ranges
         
     
-def draw_ellipse(mean, covariance, weight, ax=None, marker='X', contour_levels=[2],
-                 weight_size=1000, label=None, component_count=0, **kwargs):
+def draw_ellipse(mean, covariance, weight, ax=None, fill=False, marker='X', 
+                 contour_levels=[2], weight_size=1000, label=None, component_count=0, **kwargs):
     """Draw the error ellipse corresponding to a given mean vector and Gaussian covariance matrix.
     Since this is done in the context of Gaussian mixture models (GMMs), the weight is also indicated 
     with a marker whose size is proportional to the weight value. Based on
@@ -179,6 +179,8 @@ def draw_ellipse(mean, covariance, weight, ax=None, marker='X', contour_levels=[
         The weight associated with this GMM component.
     ax : instance of the axes.Axes class from pyplot, default='None'
         The panel where to draw the ellipse.    
+    fill : bool, default=False
+        Whether to fill the contours or not.
     marker : string, default='X'
         Marker type for the centroid of the ellipse.
     contour_levels : list of integers, default=[2]
@@ -204,7 +206,7 @@ def draw_ellipse(mean, covariance, weight, ax=None, marker='X', contour_levels=[
     contours = find_contours(contour_levels)   
     # draw the ellipse
     for contour in contours:
-        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle=angle, fill=False, 
+        ax.add_patch(Ellipse(mean, contour*width, contour*height, angle=angle, fill=fill, 
                              label=label if component_count==0 else "", **kwargs))
         ax.scatter(mean[0], mean[1], s=weight_size*weight, marker=marker, **kwargs)
 
@@ -238,7 +240,8 @@ def plot_gmm_contours(gmm, ax=None, fill=False, label='', xlabel='X1', ylabel='X
     """
     means, covariances, weights = gmm.means_, gmm.covariances_, gmm.weights_
     for component_count, (mean, covariance, weight) in enumerate(zip(means, covariances, weights)):
-        draw_ellipse(mean, covariance, weight, ax=ax, component_count=component_count, label=label, **kwargs)  
+        draw_ellipse(mean, covariance, weight, ax=ax, fill=fill, 
+                     component_count=component_count, label=label, **kwargs)  
     return ax
 
 
