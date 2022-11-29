@@ -366,9 +366,10 @@ class EstimateMI:
                                          for n_c in range(1, self.best_components+1)]
                 # checking if all elements are False; in this case, a warning should be raised
                 if not np.sum(convergence_flags): 
-                    warnings.warn(
-                        f"All CV GMM fits converged only after their second iteration for all components; "
-                        "this is usually suspicious, and might be a symptom of a bad fit. "
+                    warnings.warn(    
+                        f"The best-fit GMM parameters were found after only 2 iterations of the expectation-maximization procedure,"
+                        " irrespective of the initial GMM parameters and number of GMM components. "
+                        "This is usually suspicious, and might be a symptom of a bad fit. "
                         "Plot the loss curves as described in the walkthrough, and try reducing threshold_fit, "
                         "or with a different init_type.",
                         ConvergenceWarning,
