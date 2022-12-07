@@ -321,7 +321,6 @@ class GMMWithMI(GMM):
         self.MI = KL
         return KL
 
-
     def estimate_MI_quad(self, tol_int=1.49e-8, limit=np.inf):
         """Compute the mutual information (MI) associated with a particular GMM model, 
         using quadrature integration.
@@ -373,14 +372,22 @@ class GMMWithMI(GMM):
         # we create a GMM object to pass to the integral functions
         gmm = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
                      means_init=self.means_, covariances_init=self.covariances_)
-        entropy_1d_x = integrate.quad(entropy_1d_integrand, -limit, limit,
-                                      args=(gmm, 0), epsabs=tol_int, epsrel=tol_int)[0]
-        entropy_1d_y = integrate.quad(entropy_1d_integrand, -limit, limit,
-                                      args=(gmm, 1), epsabs=tol_int, epsrel=tol_int)[0]
-        KL = entropy_1d_x - entropy_1d_y
+        KL = integrate.quad(integrand_kl_estimate, -limit, limit, args=(gmm) ,epsabs=tol_int, epsrel=tol_int)[0]
         self.MI = KL
         return KL
-    
+
+
+def loglikelihood_1d(x, model, index):
+    assert index == 0 or index == 1, f"Index must be either 0 (x) or 1 (y); found '{index}'"
+    x = np.array(x).reshape(1, 1)
+    return model.score_samples_marginal(x, index)
+
+
+def integrand_kl_estimate(x, model):
+    logp = loglikelihood_1d(x, model, 0)
+    logq = loglikelihood_1d(x, model, 1)
+    return np.exp(logp) * (logp - logq)
+
 
 def log_pdf(y, x, model):
     """Log-likelihood in 2D for a given model
