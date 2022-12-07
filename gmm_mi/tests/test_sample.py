@@ -1,5 +1,6 @@
 import numpy as np
 from gmm_mi.mi import EstimateMI
+from gmm_mi.param_holders import MIDistParamHolder
 
 def test_simple():
     # create simple bivariate Gaussian data
@@ -23,4 +24,17 @@ def test_simple():
     ax.tick_params(axis='both', which='both', labelsize=20)
     ax.set_xlabel('X1', fontsize=30)
     ax.set_ylabel('X2', fontsize=30)
-    ax.legend(fontsize=25, frameon=False)   
+    ax.legend(fontsize=25, frameon=False)
+
+
+def test_KL_analytic():
+    nu_a, std_a = 7, 4
+    nu_b, std_b = -3, 5
+    a = np.random.normal(nu_a, std_a, 10000)
+    b = np.random.normal(nu_b, std_b, 10000)
+    analytic_kl = np.log(std_b) - np.log(std_a) - 0.5 * (1 - ((std_a ** 2 + (nu_a - nu_b) ** 2) / std_b ** 2))
+    mi_mean, mi_std = EstimateMI().fit(np.column_stack((a, b)), kl=True)
+    assert (analytic_kl >= (mi_mean - 2*mi_std)) and (analytic_kl <= (mi_mean + 2*mi_std))
+    mi_mean1, mi_std1 = EstimateMI(mi_dist_params=MIDistParamHolder(MI_method='quad')).fit(np.column_stack((a, b)), kl=True)
+    assert (analytic_kl >= (mi_mean1 - 2 * mi_std1)) and (analytic_kl <= (mi_mean1 + 2 * mi_std1))
+
