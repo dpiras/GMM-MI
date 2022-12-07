@@ -310,7 +310,7 @@ class GMMWithMI(GMM):
         
         Returns
         -------
-        MI : float
+        KL : float
             The value of mutual information.
         """
         points, _ = self.sample(MC_samples)
@@ -353,7 +353,7 @@ class GMMWithMI(GMM):
         return MI
     
     def estimate_KL_quad(self, tol_int=1.49e-8, limit=np.inf):
-        """Compute the mutual information (MI) associated with a particular GMM model,
+        """Compute the KL divergence associated with a particular GMM model,
         using quadrature integration.
         
         Parameters

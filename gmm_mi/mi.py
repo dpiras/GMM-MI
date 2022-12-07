@@ -246,7 +246,7 @@ class EstimateMI:
         return MI
     
     def _calculate_KL(self, gmm, tol_int=1.49e-8, limit=np.inf):
-        """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
+        """Calculate KL divergence given a Gaussian mixture model in 2D.
         Use either Monte Carlo (MC) method, or quadrature method.
 
         Parameters
@@ -262,14 +262,14 @@ class EstimateMI:
 
         Returns
         ----------
-        MI : float
-            The value of MI.
+        KL : float
+            The value of KL.
         """
         if self.MI_method == 'MC':
-            MI = gmm.estimate_KL_MC(MC_samples=self.MC_samples)
+            KL = gmm.estimate_KL_MC(MC_samples=self.MC_samples)
         elif self.MI_method == 'quad':
-            MI = gmm.estimate_KL_quad(tol_int=tol_int, limit=limit)
-        return MI
+            KL = gmm.estimate_KL_quad(tol_int=tol_int, limit=limit)
+        return KL
 
     def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init, kl=False):
         """Perform bootstrap on the given data to calculate the distribution of mutual information (MI)
