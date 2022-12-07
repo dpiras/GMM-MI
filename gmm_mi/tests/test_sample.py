@@ -28,8 +28,8 @@ def test_simple():
 
 
 def test_KL_analytic():
-    nu_a, std_a = 0.1, 4
-    nu_b, std_b = 0.1, 5
+    nu_a, std_a = 7, 4
+    nu_b, std_b = -3, 5
     a = np.random.normal(nu_a, std_a, 10000)
     b = np.random.normal(nu_b, std_b, 10000)
     analytic_kl = np.log(std_b) - np.log(std_a) - 0.5 * (1 - ((std_a ** 2 + (nu_a - nu_b) ** 2) / std_b ** 2))
