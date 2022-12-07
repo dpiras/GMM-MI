@@ -23,4 +23,13 @@ def test_simple():
     ax.tick_params(axis='both', which='both', labelsize=20)
     ax.set_xlabel('X1', fontsize=30)
     ax.set_ylabel('X2', fontsize=30)
-    ax.legend(fontsize=25, frameon=False)   
+    ax.legend(fontsize=25, frameon=False)
+
+
+def test_KL_analytic():
+    a = np.random.normal(4, 6, 1000)
+    b = np.random.normal(-0.1, 2, 1000)
+    mi_mean, mi_std = EstimateMI().fit(np.column_stack((a, b)), kl=True)
+    analytic_kl = - np.log(6) + np.log(2) - 0.5 * (1 - ((6 ** 2 + (-0.1 - 4) ** 2) / 2 ** 2))
+    assert (analytic_kl >= (mi_mean - 2*mi_std)) and (analytic_kl <= (mi_mean + 2*mi_std))
+

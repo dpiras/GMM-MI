@@ -299,6 +299,29 @@ class GMMWithMI(GMM):
         self.MI = MI
         return MI
 
+    def estimate_KL_MC(self, MC_samples=1e5):
+        """Compute the KL-divergence (KL) associated with a particular GMM model,
+        using MC integration.
+        
+        Parameters
+        ----------
+        MC_samples : integer, default=1e5
+            Number of Monte Carlo (MC) samples to perform numerical integration of the MI integral.
+        
+        Returns
+        -------
+        MI : float
+            The value of mutual information.
+        """
+        points, _ = self.sample(MC_samples)
+        # and the marginals; index=0 corresponds to x, index=y corresponds to y
+        marginal_x = self.score_samples_marginal(points[:, :1], index=0)
+        marginal_y = self.score_samples_marginal(points[:, :1], index=1)
+        KL = np.mean(marginal_x - marginal_y)
+        self.MI = KL
+        return KL
+
+
     def estimate_MI_quad(self, tol_int=1.49e-8, limit=np.inf):
         """Compute the mutual information (MI) associated with a particular GMM model, 
         using quadrature integration.
@@ -330,7 +353,35 @@ class GMMWithMI(GMM):
         self.MI = MI
         return MI
     
+    def estimate_KL_quad(self, tol_int=1.49e-8, limit=np.inf):
+        """Compute the mutual information (MI) associated with a particular GMM model,
+        using quadrature integration.
+        
+        Parameters
+        ----------
+        tol_int : float, default=1.49e-8
+            Integral tolerance; the default value is the one form scipy.
+        limit : float, default=np.inf
+            The extrema of the integral to calculate. Usually the whole plane, so defaults to inf.
+            Integral goes from -limit to +limit.
+        
+        Returns
+        -------
+        MI : float
+            The value of mutual information.
+        """
+        # we create a GMM object to pass to the integral functions
+        gmm = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_, covariances_init=self.covariances_)
+        entropy_1d_x = integrate.quad(entropy_1d_integrand, -limit, limit,
+                                      args=(gmm, 0), epsabs=tol_int, epsrel=tol_int)[0]
+        entropy_1d_y = integrate.quad(entropy_1d_integrand, -limit, limit,
+                                      args=(gmm, 1), epsabs=tol_int, epsrel=tol_int)[0]
+        KL = entropy_1d_x - entropy_1d_y
+        self.MI = KL
+        return KL
     
+
 def log_pdf(y, x, model):
     """Log-likelihood in 2D for a given model
     (typically a Gaussian mixture model, GMM).
