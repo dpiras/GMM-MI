@@ -294,9 +294,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution, in nat.
+            Mean of the MI distribution.
         MI_std : float
-            Standard deviation of the MI distribution, in nat.
+            Standard deviation of the MI distribution.
         """ 
         if self.n_bootstrap < 1:
             do_bootstrap = False
@@ -325,8 +325,8 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
 
-    def fit(self, X, return_lcurves=False, verbose=False, kl=False):
-        """Calculate mutual information (MI) distribution (in nat).
+    def fit(self, X, return_lcurves=False, verbose=False, kl=False, base=np.exp(1)):
+        """Calculate mutual information (MI) distribution (in nat, unless a different base is specified).
         The first part performs density estimation of the data using GMMs and k-fold cross-validation.
         The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
         The MI uncertainty is calculated through bootstrap.
@@ -341,13 +341,16 @@ class EstimateMI:
             Whether to print useful procedural statements.
         kl : bool, default=False
             If True, return K-L divergence instead of MI.
+        base : float, default=np.exp(1)
+            The base of the logarithm to calculate MI or KL. 
+            By default, unit is nat. Set base=2 for bit.
                 
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution, in nat.
+            Mean of the MI distribution, in nat (unless a different base is specified).
         MI_std : float
-            Standard deviation of the MI distribution, in nat.
+            Standard deviation of the MI distribution, in nat (unless a different base is specified).
         loss_curves : list of lists
             Loss curves of the models trained during cross-validation; currently used for debugging.
             Only returned if return_lcurves is true.
@@ -381,8 +384,8 @@ class EstimateMI:
 
                 if self.converged:
                     best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components,
-                                                                                                      fixed_components=self.fixed_components,
-                                                                                                      patience=self.patience)
+                                                                                                     fixed_components=self.fixed_components,
+                                                                                                     patience=self.patience)
                     # these are assigned to self only to possibly plot the final model
                     # in `plot_fitted_model`.
                     self.best_components = best_components
@@ -445,7 +448,11 @@ class EstimateMI:
         
         if self.verbose:
             print('MI estimation completed, returning mean and standard deviation.')
-            
+        
+        # set units according to input base
+        MI_mean /= np.log(base)
+        MI_std /= np.log(base)
+
         if return_lcurves:
             return MI_mean, MI_std, self.lcurves        
         else:
@@ -508,9 +515,9 @@ class EstimateMI:
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution, in nat.
+            Mean of the MI distribution.
         MI_std : float
-            Standard deviation of the MI distribution, in nat. None if bootstrap==False.
+            Standard deviation of the MI distribution. None if bootstrap==False.
         """  
         if self.n_bootstrap < 1:
             do_bootstrap = False
@@ -547,12 +554,12 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
        
-    def fit_categorical(self, X, y, verbose=False):
+    def fit_categorical(self, X, y, verbose=False, base=np.exp(1)):
         """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
         The first part performs density estimation of the conditional distributions, using GMMs and k-fold cross-validation.
         The second part uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
         The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
-        The complete formula can be found in Appendix B of Piras et al. (2022).
+        The complete formula can be found in Appendix B of Piras et al. (2022), arXiv 2211.00024.
 
         Parameters
         ----------  
@@ -562,13 +569,16 @@ class EstimateMI:
             Categorical values corresponding to X.
         verbose : bool, default=False
             Whether to print useful procedural statements.
+        base : float, default=np.exp(1)
+            The base of the logarithm to calculate MI. 
+            By default, unit is nat. Set base=2 for bit.
             
         Returns
         ----------
         MI_mean : float
-            Mean of the MI distribution, in nat.
+            Mean of the MI distribution, in nat (unless a different base is specified).
         MI_std : float
-            Standard deviation of the MI distribution, in nat.
+            Standard deviation of the MI distribution, in nat (unless a different base is specified).
         """
         assert len(X.shape) == 1, f"The shape of the continuous data must be (n_samples), found {X.shape}"    
         assert len(y.shape) == 1, f"The shape of the categorical data must be (n_samples), found {y.shape}"
