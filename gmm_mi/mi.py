@@ -159,6 +159,8 @@ class EstimateMI:
                 
     def _select_best_metric(self, n_components):
         """Select best metric to choose the number of GMM components.
+        Note all metrics are calculated and stored, but only the one indicated
+        in input is used to make decisions on convergence.
 
         Parameters
         ----------
@@ -170,24 +172,30 @@ class EstimateMI:
         metric : float
             The value of the metric selected to choose the number of components.
         """    
-        if self.metric_method == 'aic' or self.metric_method == 'bic':
-            # in this case we need to re-fit the dataset; we start from the final point
-            _, _, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components, 
-                                                                   fixed_components=False, 
-                                                                   patience=0)
-            gmm = single_fit(X=self.X, n_components=n_components, reg_covar=self.reg_covar, 
-                             threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
-                             w_init=w_init, m_init=m_init, p_init=p_init)  
-            # this is an extra fit we make, so we also check if this converged
-            convergence_flag = False if gmm.n_iter_ <= 2 else True
-            self.results_dict[n_components]['convergence_flags'].append(convergence_flag)            
-            if self.metric_method == 'aic':
-                # negative since we maximise the metric
-                metric = -gmm.aic(self.X)
-            elif self.metric_method == 'bic':
-                metric = -gmm.bic(self.X)
+        # for aic and bic we need to re-fit the dataset; we start from the final point
+        _, _, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components, 
+                                                               fixed_components=False, 
+                                                               patience=0)
+        gmm = single_fit(X=self.X, n_components=n_components, reg_covar=self.reg_covar, 
+                         threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
+                         w_init=w_init, m_init=m_init, p_init=p_init)  
+        # this is an extra fit we make, so we also check if this converged
+        convergence_flag = False if gmm.n_iter_ <= 2 else True
+        self.results_dict[n_components]['convergence_flags'].append(convergence_flag)  
+        aic = gmm.aic(self.X)
+        self.results_dict[n_components]['aic'] = aic
+        bic = gmm.bic(self.X)
+        self.results_dict[n_components]['bic'] = bic
+        valid_score = self.results_dict[n_components]['best_val_score']
+        self.results_dict[n_components]['valid_score'] = valid_score
+        if self.metric_method == 'aic':
+            # negative since we maximise the metric
+            metric = -aic
+        elif self.metric_method == 'bic':
+            # negative since we maximise the metric
+            metric = -bic
         elif self.metric_method == 'valid':
-            metric = self.results_dict[n_components]['best_val_score']
+            metric = valid_score
         else:
             raise ValueError(f"metric_method must be either 'valid', 'aic' or 'bic, found '{self.metric_method}'")
         return metric        
@@ -427,8 +435,7 @@ class EstimateMI:
                     best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components,
                                                                                                      fixed_components=self.fixed_components,
                                                                                                      patience=self.patience)
-                    # these are assigned to self only to possibly plot the final model
-                    # in `plot_fitted_model`.
+                    # these are assigned to self only to possibly plot the final model in `plot_fitted_model`.
                     self.best_components = best_components
                     self.best_seed = best_seed
                     self.w_init = w_init
