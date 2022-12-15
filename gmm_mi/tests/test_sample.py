@@ -2,7 +2,8 @@ import numpy as np
 from gmm_mi.mi import EstimateMI
 from gmm_mi.param_holders import MIDistParamHolder
 
-def test_simple():
+def test_gaussian():
+    true_mean, true_std = 0.2140917, 0.0429001
     # create simple bivariate Gaussian data
     mean, cov = np.array([0, 0]), np.array([[1, 0.6], [0.6, 1]])
     rng = np.random.default_rng(0)
@@ -11,8 +12,15 @@ def test_simple():
     mi_estimator = EstimateMI()
     MI_mean, MI_std = mi_estimator.fit(X)
 
-    assert np.allclose(MI_mean, 0.2140917)
-    assert np.allclose(MI_std, 0.0429001)
+    assert np.allclose(MI_mean, true_mean)
+    assert np.allclose(MI_std, true_std)
+
+    # check nothing changes if we pass two 1D arrays instead of a single 2D array
+    mi_estimator = EstimateMI()
+    MI_mean, MI_std = mi_estimator.fit(X[:, 0], X[:, 1])
+
+    assert np.allclose(MI_mean, true_mean)
+    assert np.allclose(MI_std, true_std)
 
     # also check these do not fail
     import matplotlib.pyplot as plt
@@ -22,19 +30,22 @@ def test_simple():
     # the extra arguments can be changed
     ax = mi_estimator.plot_fitted_model(ax=ax, color='salmon', alpha=0.8, linewidth=4)
     ax.tick_params(axis='both', which='both', labelsize=20)
-    ax.set_xlabel('X1', fontsize=30)
-    ax.set_ylabel('X2', fontsize=30)
+    ax.set_xlabel('X', fontsize=30)
+    ax.set_ylabel('Y', fontsize=30)
     ax.legend(fontsize=25, frameon=False)
 
 
 def test_KL_analytic():
+    # test KL is in agreement within some sigmas for Gaussian data
     nu_a, std_a = 7, 4
     nu_b, std_b = -3, 5
-    a = np.random.normal(nu_a, std_a, 10000)
-    b = np.random.normal(nu_b, std_b, 10000)
+    sigmas = 3
+    N = 10000
+    a = np.random.normal(nu_a, std_a, N)
+    b = np.random.normal(nu_b, std_b, N)
     analytic_kl = np.log(std_b) - np.log(std_a) - 0.5 * (1 - ((std_a ** 2 + (nu_a - nu_b) ** 2) / std_b ** 2))
-    mi_mean, mi_std = EstimateMI().fit(np.column_stack((a, b)), kl=True)
-    assert (analytic_kl >= (mi_mean - 3*mi_std)) and (analytic_kl <= (mi_mean + 3*mi_std))
-    mi_mean1, mi_std1 = EstimateMI(mi_dist_params=MIDistParamHolder(MI_method='quad')).fit(np.column_stack((a, b)), kl=True)
-    assert (analytic_kl >= (mi_mean1 - 3 * mi_std1)) and (analytic_kl <= (mi_mean1 + 3 * mi_std1))
+    mi_mean, mi_std = EstimateMI().fit(a, b, kl=True)
+    assert (analytic_kl >= (mi_mean - sigmas * mi_std)) and (analytic_kl <= (mi_mean + sigmas * mi_std))
+    mi_mean1, mi_std1 = EstimateMI(mi_dist_params=MIDistParamHolder(MI_method='quad')).fit(a, b, kl=True)
+    assert (analytic_kl >= (mi_mean1 - sigmas * mi_std1)) and (analytic_kl <= (mi_mean1 + sigmas * mi_std1))
 

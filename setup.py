@@ -10,7 +10,7 @@ PACKAGENAME = 'gmm_mi'
 
 setup(
     name='gmm_mi',
-    version="0.3.2",
+    version="0.3.3",
     author='Davide Piras',
     author_email='dr.davide.piras@gmail.com',
     description='Estimate mutual information distribution with Gaussian mixture models',
