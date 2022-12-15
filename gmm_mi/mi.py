@@ -120,6 +120,43 @@ class EstimateMI:
         except:
             pass
     
+    def _check_shapes(self, X, Y):
+        """ Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
+        and return the correct array to give as input.
+
+        Parameters
+        ----------  
+        X : array-like of shape (n_samples, 2), (n_samples, 1) or (n_samples)
+            Samples from the joint distribution of the two variables whose MI or KL is calculated.
+            If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
+        Y : array-like of shape (n_samples, 1) or (n_samples), default=None
+            Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
+            If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).
+        
+        Returns
+        ----------
+        X : array-like of shape (n_samples, 2)
+            The 2D array that is used to estimate MI or KL, with the expected shape.     
+        """
+        if len(X.shape) == 1:
+            X = np.reshape(X, (X.shape[0], 1)) # add extra dimension       
+        if Y is None:
+            if X.shape[1] != 2:
+                raise ValueError(f"Y is None, but the input array X is not 2-dimensional. "\
+                     f"In this case, both X and Y should be 1-dimensional.")
+            else:
+                return X
+        # if Y is not None, we can manipulate it    
+        else:
+            if len(Y.shape) == 1:
+                Y = np.reshape(Y, (Y.shape[0], 1)) # add extra dimension
+            if X.shape[1] == 1 and Y.shape[1] == 1:
+                X = np.hstack((X, Y))
+                return X
+            else:
+                raise ValueError(f"Y is not None, but the input arrays X or Y are not 1-dimensional. "\
+                     f"Shapes found: {X.shape}, {Y.shape}.")
+                
     def _select_best_metric(self, n_components):
         """Select best metric to choose the number of GMM components.
 
@@ -325,7 +362,7 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
 
-    def fit(self, X, return_lcurves=False, verbose=False, kl=False, base=np.exp(1)):
+    def fit(self, X, Y=None, return_lcurves=False, verbose=False, kl=False, base=np.exp(1)):
         """Calculate mutual information (MI) distribution (in nat, unless a different base is specified).
         The first part performs density estimation of the data using GMMs and k-fold cross-validation.
         The second part uses the fitted model to calculate MI, using either Monte Carlo or quadrature methods.
@@ -333,8 +370,12 @@ class EstimateMI:
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples, 2)
-            Samples from the joint distribution of the two variables whose MI is calculated.
+        X : array-like of shape (n_samples, 2) or (n_samples, 1) or (n_samples)
+            Samples from the joint distribution of the two variables whose MI or KL is calculated.
+            If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
+        Y : array-like of shape (n_samples, 1) or (n_samples), default=None
+            Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
+            If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).
         return_lcurves : bool, default=False
             Whether to return the loss curves or not (for debugging purposes).                          
         verbose : bool, default=False
@@ -354,8 +395,8 @@ class EstimateMI:
         loss_curves : list of lists
             Loss curves of the models trained during cross-validation; currently used for debugging.
             Only returned if return_lcurves is true.
-        """
-        assert X.shape[1] == 2, f"The shape of the data must be (n_samples, 2), found {X.shape}"    
+        """ 
+        X = self._check_shapes(X, Y)
         self.X = X
         self.verbose = verbose
         
