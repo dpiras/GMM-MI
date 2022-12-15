@@ -369,6 +369,30 @@ class EstimateMI:
         MI_mean = np.mean(MI_estimates)
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
+    
+    def _set_units(self, MI_mean, MI_std, base):
+        """ Set units according to input base.
+        
+        Parameters
+        ----------
+        MI_mean : float
+            Mean of the MI distribution, in nat.
+        MI_std : float
+            Standard deviation of the MI distribution, in nat.
+        base : float
+            The base of the logarithm to calculate MI or KL. 
+            
+        Returns
+        ----------
+        MI_mean : float
+            Mean of the MI distribution, in the units set by base.
+        MI_std : float
+            Standard deviation of the MI distribution, in the units set by base.
+        """
+        MI_mean /= np.log(base)
+        if MI_std is not None:
+            MI_std /= np.log(base)
+        return MI_mean, MI_std
 
     def fit(self, X, Y=None, return_lcurves=False, verbose=False, kl=False, base=np.exp(1)):
         """Calculate mutual information (MI) distribution (in nat, unless a different base is specified).
@@ -498,8 +522,7 @@ class EstimateMI:
             print('MI estimation completed, returning mean and standard deviation.')
         
         # set units according to input base
-        MI_mean /= np.log(base)
-        MI_std /= np.log(base)
+        MI_mean, MI_std = self._set_units(MI_mean, MI_std, base)
 
         if return_lcurves:
             return MI_mean, MI_std, self.lcurves        
@@ -682,9 +705,12 @@ class EstimateMI:
 
         if self.verbose:
             print(f'Found best parameters for all GMMs, now onto the MI estimation') 
-        
+
         # get MI distribution
         MI_mean, MI_std = self._perform_bootstrap_categorical()
+        
+        # set units according to input base
+        MI_mean, MI_std = self._set_units(MI_mean, MI_std, base)
         
         return MI_mean, MI_std 
         
