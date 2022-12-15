@@ -44,7 +44,9 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     mi_estimator = EstimateMI()
     MI_mean, MI_std = mi_estimator.fit(X)
 
-This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. If you want to visualize the fitted model over your input data, you can run:
+This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. You can also pass two 1D arrays instead of a single 2D array.
+
+If you want to visualize the fitted model over your input data, you can run:
     
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))
