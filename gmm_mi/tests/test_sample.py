@@ -60,7 +60,7 @@ def test_KL_analytic_inverse():
     b = np.random.normal(nu_b, std_b, N)
     analytic_kl = np.log(std_a) - np.log(std_b) - 0.5 * (1 - ((std_b ** 2 + (nu_b - nu_a) ** 2) / std_a ** 2))
     mi_estimator = EstimateMI()
-    _, _ = mi_estimator.fit_predict(a, b, kl=True, kl_order='inverse')
+    _, _ = mi_estimator.fit_predict(a, b, kl=True, kl_order='reverse')
     kl_mean, kl_std = mi_estimator.KL_mean, mi_estimator.KL_std
     assert (analytic_kl >= (kl_mean - sigmas * kl_std)) and (analytic_kl <= (kl_mean + sigmas * kl_std))
 

@@ -281,7 +281,7 @@ class EstimateMI:
             MI = gmm.estimate_MI_quad(tol_int=tol_int, limit=limit)
         return MI
     
-    def _calculate_KL(self, gmm, kl_order='direct', tol_int=1.49e-8, limit=np.inf):
+    def _calculate_KL(self, gmm, kl_order='forward', tol_int=1.49e-8, limit=np.inf):
         """Calculate KL divergence given a Gaussian mixture model in 2D.
         Use either Monte Carlo (MC) method, or quadrature method.
 
@@ -289,7 +289,7 @@ class EstimateMI:
         ----------
         gmm : instance of GMM class
             The GMM model between whose marginal the KL is calculated.
-        kl_order : one of {'direct', 'inverse'}, default='direct'
+        kl_order : one of {'forward', 'reverse'}, default='forward'
             Whether to calculate the KL divergence between p(x) and p(y), or between p(y) and p(x).
         tol_int : float, default=1.49e-8
             Integral tolerance; the default value is the one form scipy.
@@ -309,7 +309,7 @@ class EstimateMI:
             KL = gmm.estimate_KL_quad(kl_order=kl_order, tol_int=tol_int, limit=limit)
         return KL
 
-    def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init, kl=False, kl_order='direct'):
+    def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init, kl=False, kl_order='forward'):
         """Perform bootstrap on the given data to calculate the distribution of mutual information (MI) or KL
         in the continuous-continuous case. If n_bootstrap < 1, do only a single fit on the entire dataset.
 
@@ -328,7 +328,7 @@ class EstimateMI:
             Initial GMM precisions.
         kl : bool, default=False
             If True, compute KL divergence too. This is not returned, but can be accessed as an attribute.
-        kl_order : one of {'direct', 'inverse'}, default='direct'
+        kl_order : one of {'forward', 'reverse'}, default='forward'
             Whether to calculate the KL divergence between p(x) and p(y), or between p(y) and p(x).
 
         Returns
@@ -504,7 +504,7 @@ class EstimateMI:
         # these indicate that the fit has been done, and there is no need to repeat it
         self.fit_done = self.converged or self.reached_max_components
                 
-    def predict(self, mi_dist_params=None, base=np.exp(1), kl=False, kl_order='direct', verbose=False):
+    def predict(self, mi_dist_params=None, base=np.exp(1), kl=False, kl_order='forward', verbose=False):
         """Calculate mutual information (MI) distribution (in nat, unless a different base is specified).
         Uses the fitted model to estimate MI using either Monte Carlo or quadrature methods.
         It can also estimate the KL divergence between the marginals, in the preferred order (KL is not symmetric).
@@ -528,9 +528,9 @@ class EstimateMI:
         
         kl : bool, default=False
             If True, compute KL divergence too. This is not returned, but can be accessed as an attribute.
-        kl_order : one of {'direct', 'inverse'}, default='direct'
-            Whether to calculate the KL divergence between p(x) and p(y) ('direct')
-            or between p(y) and p(x) ('inverse').
+        kl_order : one of {'forward', 'reverse'}, default='forward'
+            Whether to calculate the KL divergence between p(x) and p(y) ('forward')
+            or between p(y) and p(x) ('reverse').
         base : float, default=np.exp(1)
             The base of the logarithm to calculate MI or KL. 
             By default, unit is nat. Set base=2 for bit.
@@ -568,7 +568,7 @@ class EstimateMI:
         self.KL_mean, self.KL_std = self._set_units(self.KL_mean, self.KL_std, base)
         return MI_mean, MI_std    
      
-    def fit_predict(self, X, Y=None, mi_dist_params=None, kl=False, kl_order='direct', base=np.exp(1), verbose=False):
+    def fit_predict(self, X, Y=None, mi_dist_params=None, kl=False, kl_order='forward', base=np.exp(1), verbose=False):
         """Combine the `fit` and `predict` methods for easier calculation of MI. 
         See the respective methods for all information.
         """ 

@@ -512,7 +512,7 @@ def plot_loss_curves(loss_curves, n_inits, n_folds, figsize=(20, 30),
             set_titles(ax, ylabel='logL', fontsize=20)
         elif i % n_folds == 0 and i >= (n_inits-1)*n_folds:
             set_titles(ax, xlabel='Iteration', ylabel='logL', fontsize=20)            
-        set_ticksize(ax)        
+        set_ticksize(ax, labelsize=15)        
     fig.subplots_adjust(wspace=0.0, hspace=0.0)
 
 
