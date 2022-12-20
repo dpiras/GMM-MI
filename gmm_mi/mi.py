@@ -650,7 +650,7 @@ class EstimateMI:
             # to store the fitted GMM models for each category value
             self.all_gmms = []
             for category_value in range(self.category_values):
-                current_ids = np.where(self.y == category_value)
+                current_ids = np.where(self.Y == category_value)
                 # we select the relevant latents again
                 current_latents = self.X[current_ids]
                 current_latents = np.reshape(current_latents, (-1, 1))
@@ -675,43 +675,43 @@ class EstimateMI:
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
         return MI_mean, MI_std
        
-    def fit_categorical(self, X, y, verbose=False, base=np.exp(1)):
-        """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
-        The first part performs density estimation of the conditional distributions, using GMMs and k-fold cross-validation.
-        The second part uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
-        The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
-        The complete formula can be found in Appendix B of Piras et al. (2022), arXiv 2211.00024.
+    def fit_categorical(self, X, Y=None, verbose=False):
+        """Fit joint probability distribution between a continuous and a categorical variable.
+        Uses GMMs and k-fold cross-validation.
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples)
-            Samples of the continuous variable.
-        y : array-like of shape (n_samples)   
-            Categorical values corresponding to X.
-        verbose : bool, default=False
-            Whether to print useful procedural statements.
-        base : float, default=np.exp(1)
-            The base of the logarithm to calculate MI. 
-            By default, unit is nat. Set base=2 for bit.
+        X : array-like of shape (n_samples, 2) or (n_samples, 1) or (n_samples)
+            Samples from the joint distribution of the two variables whose MI is calculated.
+            If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
+            The first column of X must correspond to the samples of the continuous variable, and the second column
+            to the categorical values corresponding to the first column.
+        Y : array-like of shape (n_samples, 1) or (n_samples), default=None
+            Categorical values corresponding to X, if X is 1D.
+            If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).     
             
         Returns
         ----------
-        MI_mean : float
-            Mean of the MI distribution, in nat (unless a different base is specified).
-        MI_std : float
-            Standard deviation of the MI distribution, in nat (unless a different base is specified).
+        None
         """
-        assert len(X.shape) == 1, f"The shape of the continuous data must be (n_samples), found {X.shape}"    
-        assert len(y.shape) == 1, f"The shape of the categorical data must be (n_samples), found {y.shape}"
-        assert X.shape[0] == y.shape[0], f"The length of the categorical and continuous data must be the same!"
-        self.X = X           
-        self.y = y 
-        self.category_values = len(np.unique(y))
+        self.verbose = verbose
+        # if fit was already done, exit without doing anything
+        if self.fit_done:
+            if self.verbose:
+                print('Fit already done, not being repeated.')
+            return
+        
+        X_together = self._check_shapes(X, Y)
+        X = X_together[:, :1]
+        Y = X_together[:, 1:]       
+        self.X = X
+        self.Y = Y
+        self.category_values = len(np.unique(Y))
         self.verbose = verbose
 
         self.category_best_params = [] # used to store parameters of each GMM fit
         for category_value in range(self.category_values):
-            current_ids = np.where(y == category_value)
+            current_ids = np.where(self.Y == category_value)
             # select latents corresponding to current category value
             current_latents = X[current_ids]
             # need to fit the current latents; this is p(z_i | f_i = category_value)
@@ -753,14 +753,70 @@ class EstimateMI:
                                  f"Try increasing max_components or threshold_components, "\
                                  f"or decreasing the patience.")
 
+        # at this point, either self.converged=True or self.reached_max_components=True
+        # these indicate that the fit has been done, and there is no need to repeat it
+        self.fit_done = self.converged or self.reached_max_components
+        
         if self.verbose:
-            print(f'Found best parameters for all GMMs, now onto the MI estimation') 
+            print(f'Found best parameters for all GMMs, now can start MI estimation.') 
+        
+    def predict_categorical(self, mi_dist_params=None, base=np.exp(1), verbose=False):
+        """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
+        Uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
+        The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
+        The complete formula can be found in Appendix B of Piras et al. (2022), arXiv 2211.00024.
+
+        Parameters
+        ----------  
+        (inherited from MIDistParamHolder, passed as mi_dist_params)            
+        n_bootstrap : int, default=50 
+            Number of bootstrap realisations to consider to obtain the MI uncertainty.
+            Higher values will return a better estimate of the MI uncertainty, and
+            will make the MI distribution more Gaussian-like, but the code will take longer.
+            If < 1, do not perform bootstrap and actually just do a single fit on the entire dataset.
+        integral_method : {'MC', 'quad'}, default='MC' 
+            Method to calculate the MI or KL integral. Must be one of:
+                'MC': use Monte Carlo integration with MC_samples samples.
+                'quad': use quadrature integration, as implemented in scipy, with default parameters.
+        MC_samples : int, default=1e5
+            Number of MC samples to use to estimate the MI integral. Only used if integral_method == 'MC'.
+            Higher values will return less noisy estimates of MI, but will take longer.        
+        base : float, default=np.exp(1)
+            The base of the logarithm to calculate MI. 
+            By default, unit is nat. Set base=2 for bit.
+        verbose : bool, default=False
+            Whether to print useful procedural statements.
+
+            
+        Returns
+        ----------
+        MI_mean : float
+            Mean of the MI distribution, in nat (unless a different base is specified).
+        MI_std : float
+            Standard deviation of the MI distribution, in nat (unless a different base is specified).
+        """
+        self.verbose = verbose
+        
+        if not self.fit_done:
+            raise NotFittedError(
+                "This EstimateMI instance is not fitted yet. Call `fit` with appropriate "
+                "arguments before using this estimator."
+                                )
+
+        self.mi_dist_params = mi_dist_params if mi_dist_params else MIDistParamHolder()
 
         # get MI distribution
         MI_mean, MI_std = self._perform_bootstrap_categorical()
         
         # set units according to input base
         MI_mean, MI_std = self._set_units(MI_mean, MI_std, base)
-        
+        self.MI_mean, self.MI_std = MI_mean, MI_std        
         return MI_mean, MI_std 
         
+    def fit_predict_categorical(self, X, Y, mi_dist_params=None, base=np.exp(1), verbose=False):
+        """Combine the `fit_categorical` and `predict_categorical` methods for easier calculation of MI. 
+        See the respective methods for all information.
+        """ 
+        self.fit_categorical(X=X, Y=Y, verbose=verbose)
+        MI_mean, MI_std = self.predict_categorical(mi_dist_params=mi_dist_params, base=base, verbose=verbose)
+        return MI_mean, MI_std  
