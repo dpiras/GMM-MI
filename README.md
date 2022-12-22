@@ -42,7 +42,7 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
     mi_estimator = EstimateMI()
-    MI_mean, MI_std = mi_estimator.fit_predict(X)
+    MI_mean, MI_std = mi_estimator.fit_estimate(X)
 
 This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. There are many things that you can do: for example, you can also pass two 1D arrays instead of a single 2D array, and even calculate the KL divergence between the marginals (as shown in the walkthrough notebook). If you want to visualize the fitted model over your input data, you can run:
     
@@ -71,7 +71,7 @@ To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHold
     mi_estimator = EstimateMI(gmm_fit_params=gmm_fit_params,
                               select_components_params=select_components_params)
     mi_estimator.fit(X)
-    MI_mean, MI_std = mi_estimator.predict(mi_dist_params=mi_dist_params)
+    MI_mean, MI_std = mi_estimator.estimate(mi_dist_params=mi_dist_params)
 
 This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/GMM-MI/blob/main/notebooks).
 
@@ -120,7 +120,7 @@ Here we report the most important hyperparameters that are used in GMM-MI.
         Same concept as patience when training a neural network. Higher value will fit models
         with higher numbers of GMM components, while taking longer to converge.
    
-    (controlled by MIDistParamHolder, passed as mi_dist_params to the `predict` method) 
+    (controlled by MIDistParamHolder, passed as mi_dist_params to the `estimate` method) 
     n_bootstrap : int, default=50 
         Number of bootstrap realisations to consider to obtain the MI uncertainty.
         Higher values will return a better estimate of the MI uncertainty, and

@@ -10,14 +10,14 @@ def test_gaussian():
     X = rng.multivariate_normal(mean, cov, 200) # has shape (200, 2)
     # calculate MI
     mi_estimator = EstimateMI()
-    MI_mean, MI_std = mi_estimator.fit_predict(X)
+    MI_mean, MI_std = mi_estimator.fit_estimate(X)
 
     assert np.allclose(MI_mean, true_mean)
     assert np.allclose(MI_std, true_std)
 
     # check nothing changes if we pass two 1D arrays instead of a single 2D array
     mi_estimator = EstimateMI()
-    MI_mean, MI_std = mi_estimator.fit_predict(X[:, 0], X[:, 1])
+    MI_mean, MI_std = mi_estimator.fit_estimate(X[:, 0], X[:, 1])
 
     assert np.allclose(MI_mean, true_mean)
     assert np.allclose(MI_std, true_std)
@@ -45,7 +45,7 @@ def test_KL_analytic_direct():
     b = np.random.normal(nu_b, std_b, N)
     analytic_kl = np.log(std_b) - np.log(std_a) - 0.5 * (1 - ((std_a ** 2 + (nu_a - nu_b) ** 2) / std_b ** 2))
     mi_estimator = EstimateMI()
-    _, _ = mi_estimator.fit_predict(a, b, kl=True)
+    _, _ = mi_estimator.fit_estimate(a, b, include_kl=True)
     kl_mean, kl_std = mi_estimator.KL_mean, mi_estimator.KL_std
     assert (analytic_kl >= (kl_mean - sigmas * kl_std)) and (analytic_kl <= (kl_mean + sigmas * kl_std))
 
@@ -60,7 +60,7 @@ def test_KL_analytic_inverse():
     b = np.random.normal(nu_b, std_b, N)
     analytic_kl = np.log(std_a) - np.log(std_b) - 0.5 * (1 - ((std_b ** 2 + (nu_b - nu_a) ** 2) / std_a ** 2))
     mi_estimator = EstimateMI()
-    _, _ = mi_estimator.fit_predict(a, b, kl=True, kl_order='reverse')
+    _, _ = mi_estimator.fit_estimate(a, b, include_kl=True, kl_order='reverse')
     kl_mean, kl_std = mi_estimator.KL_mean, mi_estimator.KL_std
     assert (analytic_kl >= (kl_mean - sigmas * kl_std)) and (analytic_kl <= (kl_mean + sigmas * kl_std))
 

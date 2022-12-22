@@ -569,7 +569,7 @@ class EstimateMI:
         self.KL_mean, self.KL_std = self._set_units(self.KL_mean, self.KL_std, base)
         return MI_mean, MI_std    
      
-    def fit_estimate(self, X, Y=None, mi_dist_params=None, kl=False, kl_order='forward', base=np.exp(1), verbose=False):
+    def fit_estimate(self, X, Y=None, mi_dist_params=None, include_kl=False, kl_order='forward', base=np.exp(1), verbose=False):
         """Combine the `fit` and `estimate` methods for easier calculation of MI. 
         See the respective methods for all information.
         """ 
@@ -766,7 +766,7 @@ class EstimateMI:
     def estimate_categorical(self, mi_dist_params=None, base=np.exp(1), verbose=False):
         """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
         Uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
-        The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
+        The MI uncertainty is calculated through bootstrap.
         The complete formula can be found in Appendix B of Piras et al. (2022), arXiv 2211.00024.
 
         Parameters
