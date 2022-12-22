@@ -10,9 +10,9 @@ class EstimateMI:
     """Class to calculate mutual information (MI) distribution on 2D data, using Gaussian mixture models (GMMs).
     It can also calculate the KL divergence between the two marginal variables.
     The main method is `fit` for continuous data, and `fit_categorical` for continuous-categorical data.
-    Then `predict` can be used to compute MI, KL or both. To directly obtain MI estimate, use `fit_predict`.
+    Then `estimate` can be used to compute MI, KL or both. To directly obtain MI estimate, use `fit_estimate`.
     The constructor parameters are mostly inherited from two classes: GMMFitParamHolder and ChooseComponentParamHolder. 
-    The class MIDistParamHolder is also used to pass arguments to the `predict`, so that it is possible to repeat the MI
+    The class MIDistParamHolder is also used to pass arguments to the `estimate`, so that it is possible to repeat the MI
     estimation without having to re-fit the data.
 
     Parameters
@@ -73,7 +73,7 @@ class EstimateMI:
     Attributes
     ----------
     fit_done : bool
-        Check `fit` method has been called. Initially False. Has to be true to call `predict`.
+        Check `fit` method has been called. Initially False. Has to be true to call `estimate`.
     converged : bool
         Flag to check whether we found the optimal number of components. Initially False.
     best_metric : float
@@ -273,7 +273,7 @@ class EstimateMI:
         Returns
         ----------
         MI : float
-            The value of MI, in the units specified by the base provided as input to the `predict` method.
+            The value of MI, in the units specified by the base provided as input to the `estimate` method.
         """    
         if self.integral_method == 'MC':
             MI = gmm.estimate_MI_MC(MC_samples=self.MC_samples)
@@ -301,7 +301,7 @@ class EstimateMI:
         Returns
         ----------
         KL : float
-            The value of KL, in the units specified by the base provided as input to the `predict` method.
+            The value of KL, in the units specified by the base provided as input to the `estimate` method.
         """
         if self.integral_method == 'MC':
             KL = gmm.estimate_KL_MC(kl_order=kl_order, MC_samples=self.MC_samples)
@@ -309,7 +309,7 @@ class EstimateMI:
             KL = gmm.estimate_KL_quad(kl_order=kl_order, tol_int=tol_int, limit=limit)
         return KL
 
-    def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init, kl=False, kl_order='forward'):
+    def _perform_bootstrap(self, n_components, random_state, w_init, m_init, p_init, include_kl=False, kl_order='forward'):
         """Perform bootstrap on the given data to calculate the distribution of mutual information (MI) or KL
         in the continuous-continuous case. If n_bootstrap < 1, do only a single fit on the entire dataset.
 
@@ -326,7 +326,7 @@ class EstimateMI:
             Initial GMM means.
         p_init : array-like of shape (n_components, 2, 2)
             Initial GMM precisions.
-        kl : bool, default=False
+        include_kl : bool, default=False
             If True, compute KL divergence too. This is not returned, but can be accessed as an attribute.
         kl_order : one of {'forward', 'reverse'}, default='forward'
             Whether to calculate the KL divergence between p(x) and p(y), or between p(y) and p(x).
@@ -344,7 +344,7 @@ class EstimateMI:
         else:
             do_bootstrap = True
         
-        if kl:
+        if include_kl:
             KL_estimates = np.zeros(self.n_bootstrap)
             if self.verbose:
                 print(f'Computing also {kl_order} KL divergence.')
@@ -363,12 +363,12 @@ class EstimateMI:
                              random_state=random_state, w_init=w_init, m_init=m_init, p_init=p_init)
             current_MI_estimate = self._calculate_MI(gmm)
             MI_estimates[n_b] = current_MI_estimate
-            if kl:
+            if include_kl:
                 current_KL_estimate = self._calculate_KL(gmm, kl_order=kl_order) 
                 KL_estimates[n_b] = current_KL_estimate
         MI_mean = np.mean(MI_estimates)
         MI_std = np.sqrt(np.var(MI_estimates, ddof=1)) if do_bootstrap else None
-        if kl:
+        if include_kl:
             self.KL_mean = np.mean(KL_estimates)
             self.KL_std = np.sqrt(np.var(KL_estimates, ddof=1)) if do_bootstrap else None            
         return MI_mean, MI_std
@@ -504,7 +504,7 @@ class EstimateMI:
         # these indicate that the fit has been done, and there is no need to repeat it
         self.fit_done = self.converged or self.reached_max_components
                 
-    def predict(self, mi_dist_params=None, base=np.exp(1), kl=False, kl_order='forward', verbose=False):
+    def estimate(self, mi_dist_params=None, base=np.exp(1), include_kl=False, kl_order='forward', verbose=False):
         """Calculate mutual information (MI) distribution (in nat, unless a different base is specified).
         Uses the fitted model to estimate MI using either Monte Carlo or quadrature methods.
         It can also estimate the KL divergence between the marginals, in the preferred order (KL is not symmetric).
@@ -526,7 +526,7 @@ class EstimateMI:
             Number of MC samples to use to estimate the MI integral. Only used if integral_method == 'MC'.
             Higher values will return less noisy estimates of MI, but will take longer.        
         
-        kl : bool, default=False
+        include_kl : bool, default=False
             If True, compute KL divergence too. This is not returned, but can be accessed as an attribute.
         kl_order : one of {'forward', 'reverse'}, default='forward'
             Whether to calculate the KL divergence between p(x) and p(y) ('forward')
@@ -556,7 +556,8 @@ class EstimateMI:
             
         # get MI distribution
         MI_mean, MI_std = self._perform_bootstrap(n_components=self.best_components, random_state=self.best_seed,
-                                     w_init=self.w_init, m_init=self.m_init, p_init=self.p_init, kl=kl, kl_order=kl_order)
+                                                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init, 
+                                                  include_kl=include_kl, kl_order=kl_order)
         
         if self.verbose:
             print('MI estimation completed, returning mean and standard deviation.')
@@ -568,12 +569,13 @@ class EstimateMI:
         self.KL_mean, self.KL_std = self._set_units(self.KL_mean, self.KL_std, base)
         return MI_mean, MI_std    
      
-    def fit_predict(self, X, Y=None, mi_dist_params=None, kl=False, kl_order='forward', base=np.exp(1), verbose=False):
-        """Combine the `fit` and `predict` methods for easier calculation of MI. 
+    def fit_estimate(self, X, Y=None, mi_dist_params=None, kl=False, kl_order='forward', base=np.exp(1), verbose=False):
+        """Combine the `fit` and `estimate` methods for easier calculation of MI. 
         See the respective methods for all information.
         """ 
         self.fit(X=X, Y=Y, verbose=verbose)
-        MI_mean, MI_std = self.predict(mi_dist_params=mi_dist_params, kl=kl, kl_order=kl_order, base=base, verbose=verbose)
+        MI_mean, MI_std = self.estimate(mi_dist_params=mi_dist_params, include_kl=include_kl, 
+                                       kl_order=kl_order, base=base, verbose=verbose)
         return MI_mean, MI_std            
                     
     def plot_fitted_model(self, ax=None, **kwargs):
@@ -739,8 +741,9 @@ class EstimateMI:
                     self._check_convergence(n_components=n_components)
 
                 if self.converged:
-                    best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components,                                                                                                       fixed_components=self.fixed_components,
-                                                                                            patience=self.patience)
+                    best_components, best_seed, w_init, m_init, p_init = self._extract_best_parameters(n_components=n_components, 
+                                                                                          fixed_components=self.fixed_components,
+                                                                                          patience=self.patience)
                     # save the best parameters for the current GMM category, and collect all of them before proceeding
                     self.category_best_params.append({'w': w_init, 'm': m_init, 'p': p_init, 
                                                  'bc': best_components, 'seed': best_seed})                    
@@ -760,7 +763,7 @@ class EstimateMI:
         if self.verbose:
             print(f'Found best parameters for all GMMs, now can start MI estimation.') 
         
-    def predict_categorical(self, mi_dist_params=None, base=np.exp(1), verbose=False):
+    def estimate_categorical(self, mi_dist_params=None, base=np.exp(1), verbose=False):
         """Calculate mutual information (MI) distribution between a continuous and a categorical variable.
         Uses the fitted models to calculate MI, using Monte Carlo integration (numerical integration is not implemented).
         The MI uncertainty is calculated through bootstrap. Loss curves are not returned.
@@ -774,10 +777,10 @@ class EstimateMI:
             Higher values will return a better estimate of the MI uncertainty, and
             will make the MI distribution more Gaussian-like, but the code will take longer.
             If < 1, do not perform bootstrap and actually just do a single fit on the entire dataset.
-        integral_method : {'MC', 'quad'}, default='MC' 
-            Method to calculate the MI or KL integral. Must be one of:
-                'MC': use Monte Carlo integration with MC_samples samples.
-                'quad': use quadrature integration, as implemented in scipy, with default parameters.
+        integral_method : {'MC'}, default='MC' 
+            Method to calculate the MI integral. Must be 'MC' (uses Monte Carlo integration with 
+            MC_samples samples). Only 'MC' is implemented for the categorical case; any other choice 
+            will throw an error. 
         MC_samples : int, default=1e5
             Number of MC samples to use to estimate the MI integral. Only used if integral_method == 'MC'.
             Higher values will return less noisy estimates of MI, but will take longer.        
@@ -804,6 +807,11 @@ class EstimateMI:
                                 )
 
         self.mi_dist_params = mi_dist_params if mi_dist_params else MIDistParamHolder()
+        if self.integral_method != 'MC':
+            raise ValueError(
+                "Only MC integration is implemented for the categorical case. "
+                f"Set integral_method='MC'; found {self.integral_method}"
+                                )            
 
         # get MI distribution
         MI_mean, MI_std = self._perform_bootstrap_categorical()
@@ -813,10 +821,10 @@ class EstimateMI:
         self.MI_mean, self.MI_std = MI_mean, MI_std        
         return MI_mean, MI_std 
         
-    def fit_predict_categorical(self, X, Y, mi_dist_params=None, base=np.exp(1), verbose=False):
-        """Combine the `fit_categorical` and `predict_categorical` methods for easier calculation of MI. 
+    def fit_estimate_categorical(self, X, Y, mi_dist_params=None, base=np.exp(1), verbose=False):
+        """Combine the `fit_categorical` and `estimate_categorical` methods for easier calculation of MI. 
         See the respective methods for all information.
         """ 
         self.fit_categorical(X=X, Y=Y, verbose=verbose)
-        MI_mean, MI_std = self.predict_categorical(mi_dist_params=mi_dist_params, base=base, verbose=verbose)
+        MI_mean, MI_std = self.estimate_categorical(mi_dist_params=mi_dist_params, base=base, verbose=verbose)
         return MI_mean, MI_std  
