@@ -192,7 +192,11 @@ class GMMWithMI(GMM):
                 f"but got n_components = {self.n_components}, "
                 f"n_samples = {X.shape[0]}"
             )
-        self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
+        try:
+            self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
+        except:
+            # sklearn 1.2 has apparently changed the syntax
+            self._check_parameters(X) # these are hyperparameters, not GMM parameters            
 
         do_init = True
         max_lower_bound = -np.inf
