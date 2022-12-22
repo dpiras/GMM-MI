@@ -192,7 +192,11 @@ class GMMWithMI(GMM):
                 f"but got n_components = {self.n_components}, "
                 f"n_samples = {X.shape[0]}"
             )
-        self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
+        try:
+            self._check_initial_parameters(X) # these are hyperparameters, not GMM parameters
+        except:
+            # sklearn 1.2 has apparently changed the syntax
+            self._check_parameters(X) # these are hyperparameters, not GMM parameters            
 
         do_init = True
         max_lower_bound = -np.inf
@@ -299,26 +303,37 @@ class GMMWithMI(GMM):
         self.MI = MI
         return MI
 
-    def estimate_KL_MC(self, MC_samples=1e5):
+    def estimate_KL_MC(self, kl_order='forward', MC_samples=1e5):
         """Compute the KL-divergence (KL) associated with a particular GMM model,
-        using MC integration.
+        using MC integration. The KL is meant between the marginal distributions p(x) and p(y).
+        In particular, if `kl_order` is 'forward', KL[p(x)||p(y)] is computed.
+        Otherwise, if `kl_order` is 'inverse', KL[p(y)||p(x)] is computed.
         
         Parameters
         ----------
+        kl_order : one of {'forward', 'reverse'}, default='forward'
+            Whether to calculate the KL divergence between p(x) and p(y), or between p(y) and p(x).
         MC_samples : integer, default=1e5
             Number of Monte Carlo (MC) samples to perform numerical integration of the MI integral.
         
         Returns
         -------
         KL : float
-            The value of mutual information.
+            The value of the KL divergence.
         """
         points, _ = self.sample(MC_samples)
         # and the marginals; index=0 corresponds to x, index=y corresponds to y
-        marginal_x = self.score_samples_marginal(points[:, :1], index=0)
-        marginal_y = self.score_samples_marginal(points[:, :1], index=1)
-        KL = np.mean(marginal_x - marginal_y)
-        self.MI = KL
+        if kl_order == 'forward':
+            marginal_x = self.score_samples_marginal(points[:, :1], index=0)
+            marginal_y = self.score_samples_marginal(points[:, :1], index=1)
+            KL = np.mean(marginal_x - marginal_y)
+        elif kl_order == 'reverse':
+            marginal_x = self.score_samples_marginal(points[:, 1:], index=0)
+            marginal_y = self.score_samples_marginal(points[:, 1:], index=1)
+            KL = np.mean(marginal_y - marginal_x)
+        else:
+            raise ValueError(f"KL order not known. It should be one either "
+                             f"'forward' or 'reverse'; found '{kl_order}'") 
         return KL
 
     def estimate_MI_quad(self, tol_int=1.49e-8, limit=np.inf):
@@ -352,12 +367,16 @@ class GMMWithMI(GMM):
         self.MI = MI
         return MI
     
-    def estimate_KL_quad(self, tol_int=1.49e-8, limit=np.inf):
+    def estimate_KL_quad(self, kl_order='forward', tol_int=1.49e-8, limit=np.inf):
         """Compute the KL divergence associated with a particular GMM model,
-        using quadrature integration.
+        using quadrature integration. The KL is meant between the marginal distributions p(x) and p(y).
+        In particular, if `kl_order` is 'forward', KL[p(x)||p(y)] is computed.
+        Otherwise, if `kl_order` is 'inverse', KL[p(y)||p(x)] is computed.
         
         Parameters
         ----------
+        kl_order : one of {'forward', 'reverse'}, default='forward'
+            Whether to calculate the KL divergence between p(x) and p(y), or between p(y) and p(x).
         tol_int : float, default=1.49e-8
             Integral tolerance; the default value is the one form scipy.
         limit : float, default=np.inf
@@ -366,14 +385,19 @@ class GMMWithMI(GMM):
         
         Returns
         -------
-        MI : float
-            The value of mutual information.
+        KL : float
+            The value of the KL divergence.
         """
         # we create a GMM object to pass to the integral functions
         gmm = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
                      means_init=self.means_, covariances_init=self.covariances_)
-        KL = integrate.quad(integrand_kl_estimate, -limit, limit, args=(gmm) ,epsabs=tol_int, epsrel=tol_int)[0]
-        self.MI = KL
+        if kl_order == 'forward':
+            KL = integrate.quad(integrand_kl_estimate_forward, -limit, limit, args=(gmm), epsabs=tol_int, epsrel=tol_int)[0]
+        elif kl_order == 'inverse':
+            KL = integrate.quad(integrand_kl_estimate_reverse, -limit, limit, args=(gmm), epsabs=tol_int, epsrel=tol_int)[0]
+        else:
+            raise ValueError(f"KL order not known. It should be one either "
+                             f"'forward' or 'reverse'; found '{kl_order}'") 
         return KL
 
 
@@ -383,9 +407,15 @@ def loglikelihood_1d(x, model, index):
     return model.score_samples_marginal(x, index)
 
 
-def integrand_kl_estimate(x, model):
+def integrand_kl_estimate_forward(x, model):
     logp = loglikelihood_1d(x, model, 0)
     logq = loglikelihood_1d(x, model, 1)
+    return np.exp(logp) * (logp - logq)
+
+
+def integrand_kl_estimate_reverse(x, model):
+    logp = loglikelihood_1d(x, model, 1)
+    logq = loglikelihood_1d(x, model, 0)
     return np.exp(logp) * (logp - logq)
 
 

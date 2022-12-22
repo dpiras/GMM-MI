@@ -33,10 +33,11 @@ class MIDistParamHolder:
     """Container class to provide the hyperparameters pertaining to the MI distribution.
     See mi.py for the meaning of each parameter.
     """
-    def __init__(self, n_bootstrap=50, MI_method='MC', 
+    def __init__(self, n_bootstrap=50, integral_method='MC', 
                 MC_samples=1e5):
         self.n_bootstrap = n_bootstrap
-        self.MI_method = MI_method
+        assert integral_method == 'MC' or integral_method == 'quad', f"`integral_method` must be a either 'MC' or 'quad', found '{integral_method}'"
+        self.integral_method = integral_method
         self.MC_samples = MC_samples
 
         
