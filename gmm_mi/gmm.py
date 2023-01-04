@@ -30,20 +30,29 @@ class GMMWithMI(GMM):
         Smaller values will improve the fit quality and reduce the chances of stopping at a local optimum,
         while making the code considerably slower. This is equivalent to `tol` in sklearn GMMs; only
         changed to improve clarity.
-    weights_init : array-like of shape (n_components, ), default=np.array([1.])
+    weights_init : array-like of shape (n_components, ), default=None
         The user-provided initial weights.
-        If None, a single weight is initialized as 1.
-    means_init : array-like of shape (n_components, n_features), default=np.array([0.])
+        If None, a single weight is initialized as 1. Note that if then you fit data 
+        with more than 1 feature, you will get an error: we recommend providing 
+        initial GMM parameters using our initializations.py functions.
+    means_init : array-like of shape (n_components, n_features), default=None
         The user-provided initial means,
-        If None, a single mean is initialized at 0.
-    precisions_init : array-like, default=np.array([1.]).reshape(-1, 1, 1)
-        The user-provided initial precisions (inverse of the covariance
-        matrices).
-        If None, a single precision is initialized as 1.
+        If None, a single mean is initialized at 0. Note that if then you fit data
+        with more than 1 feature, you will get an error: we recommend providing
+        initial GMM parameters using our initializations.py functions.
+    precisions_init : array-like, default=None
+        The user-provided initial precisions (inverse of the covariance matrices). 
+        If they are not provided as input:
+            - if covariances_init is specified, precisions are initialized 
+              as inverse of the initial covariance matrices.
+            - if covariances_init is None, a single precision is initialized as 1.
+              Note that in this case if then you fit data with more than 1 feature, 
+              you will get an error: we recommend providing initial GMM parameters 
+              using our initializations.py functions.
     covariances_init : array-like, default=None
         The user-provided initial covariances (inverse of the precision matrices).
         If None, covariances are initialized as inverse of initial precision matrices.
-    
+        
     Attributes
     ----------
     weights_ : array-like of shape (n_components,)
@@ -85,9 +94,9 @@ class GMMWithMI(GMM):
                  max_iter=10000,
                  random_state=None,
                  covariance_type='full',
-                 weights_init=np.array([1.]),
-                 means_init=np.array([0.]),
-                 precisions_init=np.array([1.]).reshape(-1, 1, 1),
+                 weights_init=None,
+                 means_init=None,
+                 precisions_init=None, 
                  covariances_init=None
                  ):
         super(GMMWithMI, self).__init__(n_components=n_components,
@@ -99,14 +108,26 @@ class GMMWithMI(GMM):
                  means_init=means_init,
                  precisions_init=precisions_init,
                 )
+        if weights_init is None:
+            weights_init = np.repeat(np.array([1./n_components]), n_components)
+        if means_init is None:
+            means_init = np.repeat(np.array([0.]), n_components).reshape(-1, 1)
+        if precisions_init is None:
+            precisions_init = np.repeat(np.array([1.]), n_components).reshape(-1, 1, 1)
         # having self.means_ (as well as weights and precisions) allows
         # to bypass the check_is_fitted function
+        self.weights_ = weights_init
+        self.weights_init = weights_init
         self.means_ = means_init
+        self.means_init = means_init
         if covariances_init is None:
-            covariances_init = np.linalg.inv(self.precisions_init)
+            covariances_init = np.linalg.inv(precisions_init)
+        else:
+            precisions_init = np.linalg.inv(covariances_init)
         self.covariances_ = covariances_init
         self.covariances_init = covariances_init
-        self.weights_ = weights_init
+        self.precisions_ = precisions_init
+        self.precisions_init = precisions_init         
         self.covariance_type = covariance_type
         self.precisions_cholesky_ = _compute_precision_cholesky(
                 self.covariances_, self.covariance_type
