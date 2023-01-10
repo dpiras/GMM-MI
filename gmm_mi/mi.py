@@ -89,6 +89,7 @@ class EstimateMI:
     def __init__(self, gmm_fit_params=None, select_components_params=None): 
         self.gmm_fit_params = gmm_fit_params if gmm_fit_params else GMMFitParamHolder()
         self.sel_comp_params = select_components_params if select_components_params else SelectComponentsParamHolder()
+        self.mi_dist_params = None # set this here to avoid problems with __getattr__; will be defined in `estimate`
        
         self.fit_done = False
         self.converged = False
