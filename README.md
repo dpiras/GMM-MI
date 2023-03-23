@@ -4,7 +4,7 @@
   <img src="https://user-images.githubusercontent.com/25639122/195098930-93a9865b-a0c7-4792-9474-dc0d1056e358.png?raw=true" alt="GMM-MI_logo"/>
 </p>
 
-Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://arxiv.org/abs/2211.00024). Please [cite it](#citation) if you use it in your work! Check out also the [poster accepted at the Machine Learning and the Physical Sciences workshop at NeurIPS 2022](https://neurips.cc/media/PosterPDFs/NeurIPS%202022/56922.png), and the accompanying [video](https://user-images.githubusercontent.com/25639122/201700436-3c3f6216-1925-4a09-9b04-419a64bfda15.mp4).
+Welcome to GMM-MI (pronounced ``Jimmie``)! This package allows you to calculate mutual information (MI) with its associated uncertainty, combining Gaussian mixture models (GMMs) and bootstrap. GMM-MI is accurate, computationally efficient and fully in python; you can read more about GMM-MI [in our paper](https://iopscience.iop.org/article/10.1088/2632-2153/acc444), accepted on [Machine Learning: Science and Technology](https://iopscience.iop.org/journal/2632-2153). Please [cite it](#citation) if you use it in your work! Check out also the [poster accepted at the Machine Learning and the Physical Sciences workshop at NeurIPS 2022](https://neurips.cc/media/PosterPDFs/NeurIPS%202022/56922.png), and the accompanying [video](https://user-images.githubusercontent.com/25639122/201700436-3c3f6216-1925-4a09-9b04-419a64bfda15.mp4).
 
 ## Installation
 
@@ -138,13 +138,13 @@ Feel free to [fork](https://github.com/dpiras/GMM-MI/fork) this repository to wo
 ## Citation
 If you use GMM-MI, please cite the corresponding paper:
 
-     @article{Piras22, 
+     @article{Piras23, 
           author = {Piras, Davide and Peiris, Hiranya V. and Pontzen, Andrew and Lucie-Smith, Luisa and Guo, Ningyuan and Nord, Brian},
           title = {A robust estimator of mutual information for deep learning interpretability},
-          journal = {arXiv e-prints},
-          url = {https://arxiv.org/abs/2211.00024},
-          doi = {10.48550/ARXIV.2211.00024},
-          year = {2022}
+          journal={Machine Learning: Science and Technology},
+          url={http://iopscience.iop.org/article/10.1088/2632-2153/acc444},
+          doi = {10.1088/2632-2153/acc444},
+          year = {2023}
      }
 
 ## License
