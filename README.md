@@ -139,7 +139,8 @@ Feel free to [fork](https://github.com/dpiras/GMM-MI/fork) this repository to wo
 If you use GMM-MI, please cite the corresponding paper:
 
      @article{Piras23, 
-          author = {Davide Piras and Hiranya V Peiris and Andrew Pontzen and Luisa Lucie-Smith and Ningyuan Guo and Brian Nord},
+          author = {Davide Piras and Hiranya V Peiris and Andrew Pontzen and 
+                    Luisa Lucie-Smith and Ningyuan Guo and Brian Nord},
           title = {A robust estimator of mutual information for deep learning interpretability},
           journal = {Machine Learning: Science and Technology},
           doi = {10.1088/2632-2153/acc444},
