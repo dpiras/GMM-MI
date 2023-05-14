@@ -76,6 +76,8 @@ class EstimateMI:
         Check `fit` method has been called. Initially False. Has to be true to call `estimate`.
     converged : bool
         Flag to check whether we found the optimal number of components. Initially False.
+    conditional : bool
+        Flag to check whether conditional mutual information has been requested. Initially False.
     best_metric : float
         Metric value that is tracked to decide convergence with respect to the number of components.
         This can be either the validation log-likelihood, the AIC or BIC.
@@ -93,6 +95,7 @@ class EstimateMI:
        
         self.fit_done = False
         self.converged = False
+        self.conditional = False
         self.best_metric = -np.inf
         self.patience_counter = 0
         self.results_dict = {}    
@@ -118,23 +121,24 @@ class EstimateMI:
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples, 2), (n_samples, 1) or (n_samples)
+        X : array-like of shape (n_samples, 2), (n_samples, 1), (n_samples) or (n_samples, 3)
             Samples from the joint distribution of the two variables whose MI or KL is calculated.
             If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
+            The (n_samples, 3) case is for the conditional MI(X, Y | Z).
         Y : array-like of shape (n_samples, 1) or (n_samples), default=None
             Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
             If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).
         
         Returns
         ----------
-        X : array-like of shape (n_samples, 2)
+        X : array-like of shape (n_samples, 2) or  (n_samples, 3)
             The 2D array that is used to estimate MI or KL, with the expected shape.     
         """
         if len(X.shape) == 1:
             X = np.reshape(X, (X.shape[0], 1)) # add extra dimension       
         if Y is None:
-            if X.shape[1] != 2:
-                raise ValueError(f"Y is None, but the input array X is not 2-dimensional. "\
+            if X.shape[1] != 2 and X.shape[1] != 3:
+                raise ValueError(f"Y is None, but the input array X is not 2- or 3-dimensional. "\
                      f"In this case, both X and Y should be 1-dimensional.")
             else:
                 return X
@@ -277,9 +281,19 @@ class EstimateMI:
             The value of MI, in the units specified by the base provided as input to the `estimate` method.
         """    
         if self.integral_method == 'MC':
-            MI = gmm.estimate_MI_MC(MC_samples=self.MC_samples)
+            if self.conditional == False:
+                MI = gmm.estimate_MI_MC(MC_samples=self.MC_samples)
+            else:
+                MI = gmm.estimate_cMI_MC(MC_samples=self.MC_samples)
         elif self.integral_method == 'quad':
-            MI = gmm.estimate_MI_quad(tol_int=tol_int, limit=limit)
+            if self.conditional == False:
+                MI = gmm.estimate_MI_quad(tol_int=tol_int, limit=limit)
+            else:
+                raise NotImplementedError(
+                    "Estimating conditional MI with quadrature methods is currently not implemented. "
+                    "Please use `MC` method, or write to dr.davide.piras@gmail.com if you would like "
+                    "this feature added."
+                    )          
         return MI
     
     def _calculate_KL(self, gmm, kl_order='forward', tol_int=1.49e-8, limit=np.inf):
@@ -405,12 +419,16 @@ class EstimateMI:
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples, 2) or (n_samples, 1) or (n_samples)
+        X : array-like of shape (n_samples, 2), (n_samples, 1), (n_samples) or (n_samples, 3)
             Samples from the joint distribution of the two variables whose MI or KL is calculated.
-            If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
+            If Y is None, must be of shape (n_samples, 2) or (n_samples, 3); 
+            otherwise, it must be either (n_samples, 1) or (n_samples).
+            The case (n_samples, 3) is reserved for the conditional MI(X, Y | Z); 
+            the variables must be given in this order.
         Y : array-like of shape (n_samples, 1) or (n_samples), default=None
             Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
-            If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).                   
+            If None, X must be of shape (n_samples, 2) or (n_samples, 3); 
+            otherwise, X and Y must be (n_samples, 1) or (n_samples).                   
         verbose : bool, default=False
             Whether to print useful procedural statements.
                 
@@ -428,6 +446,11 @@ class EstimateMI:
         # check shapes and proceed with fit
         X = self._check_shapes(X, Y)
         self.X = X
+        if X.shape[1] == 3:
+            self.conditional = True
+            if self.verbose:
+                print('Shape of input array is 3-D, so conditional mutual information '
+                      'will be computed.')
         
         if self.verbose:
             if not self.fixed_components:

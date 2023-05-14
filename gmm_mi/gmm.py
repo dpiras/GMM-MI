@@ -317,13 +317,56 @@ class GMMWithMI(GMM):
         points, _ = self.sample(MC_samples)       
         # evaluate the log-likelihood for the joint probability
         joint = self.score_samples(points)
-        # and the marginals; index=0 corresponds to x, index=y corresponds to y
+        # and the marginals; index=0 corresponds to x, index=1 corresponds to y
         marginal_x = self.score_samples_marginal(points[:, :1], index=0)
         marginal_y = self.score_samples_marginal(points[:, 1:], index=1)
         MI = np.mean(joint - marginal_x - marginal_y)
         self.MI = MI
         return MI
-
+    
+    def estimate_cMI_MC(self, MC_samples=1e5):
+        """Compute the conditional mutual information (cMI) associated with a particular GMM model, 
+        using MC integration. The order of variables matters: we compute MI(X, Y | Z), where Z is the
+        last variables among the three.
+        
+        Parameters
+        ----------
+        MC_samples : integer, default=1e5
+            Number of Monte Carlo (MC) samples to perform numerical integration of the MI integral.
+        
+        Returns
+        -------
+        MI : float
+            The value of mutual information.
+        """
+        points, _ = self.sample(MC_samples)       
+        # evaluate the log-likelihood for the joint probability
+        joint = self.score_samples(points)
+        # we need to compute the marginal z; index=2 corresponds to z
+        marginal_z = self.score_samples_marginal(points[:, 2:], index=2)
+        # and the marginals (x, z) and (y, z) too; 
+        # for this we create some custom 2-D GMMs
+        # for xz
+        xz_m_mask = [True, False, True]
+        xz_c_mask = [[True, False, True],
+                     [False, False, False],
+                     [True, False, True]]
+        gmm_xz = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_[:, xz_m_mask], covariances_init=self.covariances_[:, xz_c_mask].reshape(-1, 2, 2))
+        marginal_xz = gmm_xz.score_samples(points[:, xz_m_mask])
+        # and for yz
+        yz_m_mask = [False, True, True]
+        yz_c_mask = [[False, False, False],
+                     [False, True, True],
+                     [False, True, True]]
+        gmm_yz = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_[:, yz_m_mask], covariances_init=self.covariances_[:, yz_c_mask].reshape(-1, 2, 2))
+        marginal_yz = gmm_yz.score_samples(points[:, yz_m_mask])
+        # finally, we put everything together
+        MI = np.mean(marginal_z + joint - marginal_xz - marginal_yz)
+        self.MI = MI
+        return MI
+    
     def estimate_KL_MC(self, kl_order='forward', MC_samples=1e5):
         """Compute the KL-divergence (KL) associated with a particular GMM model,
         using MC integration. The KL is meant between the marginal distributions p(x) and p(y).
@@ -343,7 +386,7 @@ class GMMWithMI(GMM):
             The value of the KL divergence.
         """
         points, _ = self.sample(MC_samples)
-        # and the marginals; index=0 corresponds to x, index=y corresponds to y
+        # and the marginals; index=0 corresponds to x, index=1 corresponds to y
         if kl_order == 'forward':
             marginal_x = self.score_samples_marginal(points[:, :1], index=0)
             marginal_y = self.score_samples_marginal(points[:, :1], index=1)
