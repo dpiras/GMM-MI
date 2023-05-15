@@ -73,7 +73,7 @@ To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHold
     mi_estimator.fit(X)
     MI_mean, MI_std = mi_estimator.estimate(mi_dist_params=mi_dist_params)
 
-This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including all results from the paper, are available in [`notebooks`](https://github.com/dpiras/GMM-MI/blob/main/notebooks).
+This is equivalent to the first example, and yields (0.21 &pm; 0.04) nat. More example notebooks, including conditional mutual information and all results from the paper, are available in [`notebooks`](https://github.com/dpiras/GMM-MI/blob/main/notebooks).
 
 ## Hyperparameter description
 Here we report the most important hyperparameters that are used in GMM-MI.
