@@ -326,8 +326,8 @@ class GMMWithMI(GMM):
     
     def estimate_cMI_MC(self, MC_samples=1e5):
         """Compute the conditional mutual information (cMI) associated with a particular GMM model, 
-        using MC integration. The order of variables matters: we compute MI(X, Y | Z), where Z is the
-        last variables among the three.
+        using MC integration. The order of variables matters: we compute MI(X, Y | Z_1, ..., z_n), 
+        where the Zs are the conditional variables.
         
         Parameters
         ----------
@@ -342,28 +342,44 @@ class GMMWithMI(GMM):
         points, _ = self.sample(MC_samples)       
         # evaluate the log-likelihood for the joint probability
         joint = self.score_samples(points)
-        # we need to compute the marginal z; index=2 corresponds to z
-        marginal_z = self.score_samples_marginal(points[:, 2:], index=2)
-        # and the marginals (x, z) and (y, z) too; 
-        # for this we create some custom 2-D GMMs
-        # for xz
-        xz_m_mask = [True, False, True]
-        xz_c_mask = [[True, False, True],
-                     [False, False, False],
-                     [True, False, True]]
+        # we need to compute the marginal zs; indices>=2 correspond to zs
+        # we work with masks, where each time we set to False the variables which are not part of the integral
+        n = points.shape[1] # this gives the total number of variables involved
+        zs_m_mask = [True]*n
+        zs_m_mask[0], zs_m_mask[1] = False, False
+        # similarly for the covariances
+        zs_c_mask = [[False]*n]*n # nxn matrix of False
+        zs_c_mask = np.array(zs_c_mask)
+        zs_c_mask[2:, 2:] = True    
+        gmm_zs = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_[:, zs_m_mask], covariances_init=self.covariances_[:, zs_c_mask].reshape(-1, n-2, n-2))
+        marginal_zs = gmm_zs.score_samples(points[:, zs_m_mask])        
+        # and the marginals (x, zs) and (y, zs) too
+        xz_m_mask = [True]*n
+        xz_m_mask[1] = False
+        xz_c_mask = [[True]*n]*n # nxn matrix of True in this case
+        # for e.g. a 3D case, this should look like (all True except one row and column)
+        #[[True,  False, True ],
+        # [False, False, False],
+        # [True,  False, True ]]
+        xz_c_mask = np.array(xz_c_mask)
+        xz_c_mask[:, 1] = False        
+        xz_c_mask[1, :] = False        
         gmm_xz = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
-                     means_init=self.means_[:, xz_m_mask], covariances_init=self.covariances_[:, xz_c_mask].reshape(-1, 2, 2))
+                     means_init=self.means_[:, xz_m_mask], covariances_init=self.covariances_[:, xz_c_mask].reshape(-1, n-1, n-1))
         marginal_xz = gmm_xz.score_samples(points[:, xz_m_mask])
-        # and for yz
-        yz_m_mask = [False, True, True]
-        yz_c_mask = [[False, False, False],
-                     [False, True, True],
-                     [False, True, True]]
+        # and for yz        
+        yz_m_mask = [True]*n
+        yz_m_mask[0] = False
+        yz_c_mask = [[True]*n]*n # nxn matrix of True
+        yz_c_mask = np.array(yz_c_mask)
+        yz_c_mask[:, 0] = False        
+        yz_c_mask[0, :] = False  
         gmm_yz = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
-                     means_init=self.means_[:, yz_m_mask], covariances_init=self.covariances_[:, yz_c_mask].reshape(-1, 2, 2))
+                     means_init=self.means_[:, yz_m_mask], covariances_init=self.covariances_[:, yz_c_mask].reshape(-1, n-1, n-1))
         marginal_yz = gmm_yz.score_samples(points[:, yz_m_mask])
         # finally, we put everything together
-        MI = np.mean(marginal_z + joint - marginal_xz - marginal_yz)
+        MI = np.mean(marginal_zs + joint - marginal_xz - marginal_yz)
         self.MI = MI
         return MI
     
