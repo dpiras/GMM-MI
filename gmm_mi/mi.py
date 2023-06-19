@@ -602,7 +602,7 @@ class EstimateMI:
                                        kl_order=kl_order, base=base, verbose=verbose)
         return MI_mean, MI_std            
                     
-    def plot_fitted_model(self, ax=None, **kwargs):
+    def plot_fitted_model(self, ax=None, return_gmm=False, **kwargs):
         """Fit model to inout data and plot its contours.
         Only works if the model has been fitted successfully first.
         
@@ -610,6 +610,8 @@ class EstimateMI:
         ----------
         ax : instance of the axes.Axes class from pyplot, default=None
             The panel where to plot the samples. 
+        return_gmm : bool
+            Whether or not to return also a GMM class instance with the fitted model
         kwargs : dictionary
             The extra keyword arguments to pass to the plotting function.
         
@@ -631,7 +633,10 @@ class EstimateMI:
                  threshold_fit=self.threshold_fit, random_state=self.best_seed, max_iter=self.max_iter, 
                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
         ax = plot_gmm_contours(gmm, ax=ax, label='Fitted model', **kwargs)
-        return ax
+        if return_gmm:
+            return ax, gmm
+        else:
+            return ax
                
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
