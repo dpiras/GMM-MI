@@ -57,6 +57,15 @@ This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value o
     ax.set_ylabel('X2', fontsize=30)
     ax.legend(fontsize=25, frameon=False)    
 
+You can also draw contour plots for the input data and samples obtained from the fitted model. For example (smoothness of the contour plot heavily depends on the number of samples available):
+
+    fig = mi_estimator.plot_fitted_contours(parameters=['X1', 'X2'], 
+                                        shade_alpha=0.4, linewidths=2, 
+                                        legend_kwargs = {'loc': 'lower right'},
+                                        kde=True, # smooths contours; set this to False to accelerate plotting
+                                        )
+    fig.set_size_inches(7, 7)
+
 To choose the GMM-MI hyperparameters, we provide three classes: `GMMFitParamHolder`, `SelectComponentsParamHolder`, and `MIDistParamHolder`. An example is as follows:
 
     from gmm_mi.param_holders import GMMFitParamHolder, SelectComponentsParamHolder, MIDistParamHolder
