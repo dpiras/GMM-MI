@@ -212,8 +212,26 @@ def draw_ellipse(mean, covariance, weight, ax=None, fill=False, marker='X',
 
 
 def plot_contours(input_samples, fitted_samples, parameters, extents, **kwargs):
-    """TBC
-    https://samreay.github.io/ChainConsumer/
+    """Plot contours given samples of some distribution, even high-dimensional.
+    The contours are created using `chainconsumer` (https://samreay.github.io/ChainConsumer/).
+
+    Parameters
+    ----------
+    input_samples : array-like of shape (n_samples, n_features)
+        The input samples that were used to fit the GMM.
+    fitted_samples : array-like of shape (n_samples, n_features)
+        The samples obtained from the fitted GMM model.
+    parameters : list, default=None
+        List of strings with the parameters name, to put in the labels.
+    extents : dictionary, default=None
+        Contains the ranges of each parameter. Key must be a string, value a tuple/list.
+    kwargs : dictionary
+        The extra keyword arguments to pass to the plotting function.
+
+    Returns
+    -------
+    fig: instance of the figure.Figure class from pyplot
+        The output figure.
     """
     try:
         from chainconsumer import ChainConsumer

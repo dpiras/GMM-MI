@@ -627,6 +627,7 @@ class EstimateMI:
         """Plot GMM contours over the input data.
         Only works if the model has been fitted successfully first,
         and only in the case of 2D input data (i.e. not in the conditional case).
+        Works in the continuous case only.
         
         Parameters
         ----------
@@ -651,14 +652,14 @@ class EstimateMI:
     def plot_fitted_contours(self, parameters=None, extents=None, n_samples=None, **kwargs):
         """Plot overall fitted distribution contours over the input data.
         The contours are created using `chainconsumer`.
-        Only works if the model has been fitted successfully first.
+        Only works if the model has been fitted successfully first, and in the continuous case only.
         
         Parameters
         ----------
-        parameters : 
-        
-        extents : 
-        
+        parameters : list, default=None
+            List of strings with the parameters name, to put in the labels.
+        extents : dictionary, default=None
+            Contains the ranges of each parameter. Key must be a string, value a tuple/list.
         n_samples : int, default=None
             The number of samples to draw from the fitted GMM to draw the contours.
             If None, draws the same number of samples as in the input data.
