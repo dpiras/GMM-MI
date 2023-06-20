@@ -210,7 +210,23 @@ def draw_ellipse(mean, covariance, weight, ax=None, fill=False, marker='X',
                              label=label if component_count==0 else "", **kwargs))
         ax.scatter(mean[0], mean[1], s=weight_size*weight, marker=marker, **kwargs)
 
-    
+
+def plot_contours(input_samples, fitted_samples, parameters, extents, **kwargs):
+    """TBC
+    https://samreay.github.io/ChainConsumer/
+    """
+    try:
+        from chainconsumer import ChainConsumer
+    except:
+        raise ModuleNotFoundError('To plot contours, you need to `pip install chainconsumer` first')
+            
+    c = ChainConsumer().add_chain(input_samples, parameters=parameters, name='Input data')
+    c.add_chain(fitted_samples, parameters=parameters, name='Fitted model')
+    c.configure(**kwargs) 
+    fig = c.plotter.plot(extents=extents)
+    return fig
+
+
 def plot_gmm_contours(gmm, ax=None, fill=False, label='', xlabel='X1', ylabel='X2', **kwargs):
     """Draw the contour ellipses corresponding to a given Gaussian mixture model (GMM).
     

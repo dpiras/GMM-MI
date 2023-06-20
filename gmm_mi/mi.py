@@ -602,25 +602,15 @@ class EstimateMI:
                                        kl_order=kl_order, base=base, verbose=verbose)
         return MI_mean, MI_std            
                     
-    def plot_fitted_model(self, ax=None, return_gmm=False, **kwargs):
-        """Fit model to inout data and plot its contours.
+    def _single_fit(self):
+        """Fit final model to input data. 
+        This will be used to draw GMM components and/or contours.
         Only works if the model has been fitted successfully first.
-        
-        Parameters
-        ----------
-        ax : instance of the axes.Axes class from pyplot, default=None
-            The panel where to plot the samples. 
-        return_gmm : bool
-            Whether or not to return also a GMM class instance with the fitted model
-        kwargs : dictionary
-            The extra keyword arguments to pass to the plotting function.
-        
+          
         Returns
         -------
-        fig: instance of the figure.Figure class from pyplot
-            The output figure.
-        ax : instance of the axes.Axes class from pyplot
-            The output panel.
+        gmm : instance of GMM class
+            The fitted GMM model.
         """
         if not self.fit_done:
             raise NotFittedError(
@@ -628,16 +618,68 @@ class EstimateMI:
                 "arguments before using this estimator."
                                 )
             
-        from gmm_mi.utils.plotting import plot_gmm_contours
         gmm = single_fit(X=self.X, n_components=self.best_components, reg_covar=self.reg_covar, 
                  threshold_fit=self.threshold_fit, random_state=self.best_seed, max_iter=self.max_iter, 
                  w_init=self.w_init, m_init=self.m_init, p_init=self.p_init)
+        return gmm
+
+    def plot_fitted_model(self, ax=None, **kwargs):
+        """Plot GMM contours over the input data.
+        Only works if the model has been fitted successfully first,
+        and only in the case of 2D input data (i.e. not in the conditional case).
+        
+        Parameters
+        ----------
+        ax : instance of the axes.Axes class from pyplot, default=None
+            The panel where to plot the samples. 
+        kwargs : dictionary
+            The extra keyword arguments to pass to the plotting function.
+        
+        Returns
+        -------
+        ax : instance of the axes.Axes class from pyplot
+            The output panel.
+        """     
+        from gmm_mi.utils.plotting import plot_gmm_contours
+        if self.conditional:
+            raise NotImplementedError("When computing conditional MI, to visualise the contours "
+                                      "you need to call `plot_fitted_contours`.")
+        gmm = self._single_fit()    
         ax = plot_gmm_contours(gmm, ax=ax, label='Fitted model', **kwargs)
-        if return_gmm:
-            return ax, gmm
-        else:
-            return ax
-               
+        return ax
+ 
+    def plot_fitted_contours(self, parameters=None, extents=None, n_samples=None, **kwargs):
+        """Plot overall fitted distribution contours over the input data.
+        The contours are created using `chainconsumer`.
+        Only works if the model has been fitted successfully first.
+        
+        Parameters
+        ----------
+        parameters : 
+        
+        extents : 
+        
+        n_samples : int, default=None
+            The number of samples to draw from the fitted GMM to draw the contours.
+            If None, draws the same number of samples as in the input data.
+        kwargs : dictionary
+            The extra keyword arguments to pass to the plotting function.
+        
+        Returns
+        -------
+        fig: instance of the figure.Figure class from pyplot
+            The output figure.
+
+        """
+        from gmm_mi.utils.plotting import plot_contours
+        gmm = self._single_fit()  
+        if n_samples:
+            fitted_samples = gmm.sample(n_samples)[0]
+        else:    
+            fitted_samples = gmm.sample(self.X.shape[0])[0]
+        fig = plot_contours(self.X, fitted_samples, parameters, extents, **kwargs)
+        return fig
+             
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
         Use only Monte Carlo (MC) method. 
