@@ -382,6 +382,39 @@ class GMMWithMI(GMM):
         MI = np.mean(marginal_zs + joint - marginal_xz - marginal_yz)
         self.MI = MI
         return MI
+
+    def estimate_MI_MC_highdim(self, split, MC_samples=1e5):
+        """Compute the conditional mutual information (cMI) associated with a particular GMM model, 
+        using MC integration. The order of variables matters: we compute MI(X, Y | Z_1, ..., z_n), 
+        where the Zs are the conditional variables.
+        
+        Parameters
+        ----------
+        split : int
+            This integer controls which features belong to the first variable, and which ones belong to the second variable.
+        MC_samples : integer, default=1e5
+            Number of Monte Carlo (MC) samples to perform numerical integration of the MI integral.
+        
+        Returns
+        -------
+        MI : float
+            The value of mutual information.
+        """
+        points, _ = self.sample(MC_samples)       
+        # evaluate the log-likelihood for the joint probability
+        joint = self.score_samples(points)
+        # and the marginals (x) and (y) too, but this time they are multidimensional       
+        gmm_x = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_[:, :split], covariances_init=self.covariances_[:, :split, :split])
+        marginal_x = gmm_x.score_samples(points[:, :split])
+        # and for y       
+        gmm_y = GMMWithMI(n_components=self.n_components, weights_init=self.weights_,
+                     means_init=self.means_[:, split:], covariances_init=self.covariances_[:, split:, split:])
+        marginal_y = gmm_y.score_samples(points[:, split:])
+        # finally, we put everything together
+        MI = np.mean(joint - marginal_x - marginal_y)
+        self.MI = MI
+        return MI
     
     def estimate_KL_MC(self, kl_order='forward', MC_samples=1e5):
         """Compute the KL-divergence (KL) associated with a particular GMM model,

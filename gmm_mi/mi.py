@@ -116,22 +116,26 @@ class EstimateMI:
             pass
     
     def _check_shapes(self, X, Y):
-        """ Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
-        and return the correct array to give as input.
+        """ Check that the shapes of the arrays given as input to GMM-MI are 2D, 1D,
+        or with the correct conditional structure. Return the correct array to give as input.
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples, 2), (n_samples, 1), (n_samples) or (n_samples, 2+n_var)
+        X : array-like of shape (n_samples, n_features), with n_features taking multiple possibilities.
             Samples from the joint distribution of the two variables whose MI or KL is calculated.
-            If Y is None, must be of shape (n_samples, 2); otherwise, it must be either (n_samples, 1) or (n_samples).
-            The (n_samples, 2+n_var) case is for the conditional MI(X, Y | Z_1, ..., z_n), where conditional MI is computed.
-        Y : array-like of shape (n_samples, 1) or (n_samples), default=None
+            If Y is None, must be of shape (n_samples, 2) for standard MI, or (n_samples, 2+n_var) 
+            for conditional MI, or (n_samples, features_1 + features_2) for multidimensional variables. 
+            otherwise, it must be either (n_samples, 1) or (n_samples) for the standard case, 
+            or (n_samples, features_1) in the high-dimensional case.
+            The case (n_samples, 2+n_var) is reserved for the conditional MI(X, Y | Z_1, ..., Z_n); 
+            the variables must be given in this order.
+        Y : array-like of shape (n_samples, n_features), default=None
             Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
-            If None, X must be of shape (n_samples, 2); otherwise, X and Y must be (n_samples, 1) or (n_samples).
-        
+            If None, all features must be already in X; otherwise, Y must be (n_samples, features_2).
+            
         Returns
         ----------
-        X : array-like of shape (n_samples, 2) or  (n_samples, 2+n_var)
+        X : array-like of shape (n_samples, n_features)
             The 2D (or higher-dimensional) array that is used to estimate MI or KL, with the expected shape.     
         """
         if len(X.shape) == 1:
@@ -139,19 +143,18 @@ class EstimateMI:
         if Y is None:
             if X.shape[1] < 2:
                 raise ValueError(f"Y is None, but the input array X is not 2- (or higher-) dimensional. "\
-                     f"In this case, both X and Y should be 1-dimensional.")
+                     f"Please input a Y array or increase the dimensionality of X.")
             else:
                 return X
         # if Y is not None, we can manipulate it    
         else:
             if len(Y.shape) == 1:
                 Y = np.reshape(Y, (Y.shape[0], 1)) # add extra dimension
-            if X.shape[1] == 1 and Y.shape[1] == 1:
-                X = np.hstack((X, Y))
-                return X
-            else:
-                raise ValueError(f"Y is not None, but the input arrays X or Y are not 1-dimensional. "\
-                     f"Shapes found: {X.shape}, {Y.shape}.")
+            if not self.split:
+                self.split = X.shape[1]
+            X = np.hstack((X, Y))
+            return X
+
                 
     def _select_best_metric(self, n_components):
         """Select best metric to choose the number of GMM components.
@@ -281,18 +284,21 @@ class EstimateMI:
             The value of MI, in the units specified by the base provided as input to the `estimate` method.
         """    
         if self.integral_method == 'MC':
-            if self.conditional == False:
-                MI = gmm.estimate_MI_MC(MC_samples=self.MC_samples)
-            else:
+            if self.conditional == True:
                 MI = gmm.estimate_cMI_MC(MC_samples=self.MC_samples)
+            elif self.split is not None:
+                MI = gmm.estimate_MI_MC_highdim(split=self.split, MC_samples=self.MC_samples)                
+            else:
+                MI = gmm.estimate_MI_MC(MC_samples=self.MC_samples)
         elif self.integral_method == 'quad':
-            if self.conditional == False:
+            if self.conditional == False and self.split is None:
                 MI = gmm.estimate_MI_quad(tol_int=tol_int, limit=limit)
             else:
                 raise NotImplementedError(
-                    "Estimating conditional MI with quadrature methods is currently not implemented. "
+                    "Estimating conditional MI, or MI between multivariate variables, with quadrature methods "
+                    "is currently not implemented. "
                     "Please use `MC` method, or write to dr.davide.piras@gmail.com if you would like "
-                    "this feature added."
+                    "this feature added, or raise an issue here: https://github.com/dpiras/GMM-MI/issues."
                     )          
         return MI
     
@@ -413,22 +419,28 @@ class EstimateMI:
             MI_std /= np.log(base)
         return MI_mean, MI_std
 
-    def fit(self, X, Y=None, verbose=False):
+    def fit(self, X, Y=None, conditional=False, split=None, verbose=False):
         """Performs density estimation of the data using GMMs and k-fold cross-validation.
         The fitted model will be used to estimate MI and/or KL.
 
         Parameters
         ----------  
-        X : array-like of shape (n_samples, 2), (n_samples, 1), (n_samples) or (n_samples, 3)
+        X : array-like of shape (n_samples, n_features), with n_features taking multiple possibilities.
             Samples from the joint distribution of the two variables whose MI or KL is calculated.
-            If Y is None, must be of shape (n_samples, 2) or (n_samples, 3); 
-            otherwise, it must be either (n_samples, 1) or (n_samples).
+            If Y is None, must be of shape (n_samples, 2) for standard MI, or (n_samples, 2+n_var) 
+            for conditional MI, or (n_samples, features_1 + features_2) for multidimensional variables. 
+            otherwise, it must be either (n_samples, 1) or (n_samples) for the standard case, 
+            or (n_samples, features_1) in the high-dimensional case.
             The case (n_samples, 2+n_var) is reserved for the conditional MI(X, Y | Z_1, ..., Z_n); 
             the variables must be given in this order.
-        Y : array-like of shape (n_samples, 1) or (n_samples), default=None
+        Y : array-like of shape (n_samples, n_features), default=None
             Samples from the marginal distribution of one of the two variables whose MI or KL is calculated.
-            If None, X must be of shape (n_samples, 2) or (n_samples, 2+n_var); 
-            otherwise, X and Y must be (n_samples, 1) or (n_samples).                   
+            If None, all features must be already in X; otherwise, Y must be (n_samples, features_2).
+        conditional : bool, default=False
+            Whether to compute conditional MI between unidimensional variables given a set of other unidimensional variables.
+        split : int, default=None
+            When computing MI between multidimensional variables, this integer controls which features belong to
+            the first variable, and which ones belong to the second variable.
         verbose : bool, default=False
             Whether to print useful procedural statements.
                 
@@ -437,6 +449,8 @@ class EstimateMI:
         None
         """ 
         self.verbose = verbose
+        self.conditional = conditional
+        self.split = split
         # if fit was already done, exit without doing anything
         if self.fit_done:
             if self.verbose:
@@ -447,11 +461,24 @@ class EstimateMI:
         X = self._check_shapes(X, Y)
         self.X = X
         if X.shape[1] >= 3:
-            self.conditional = True
-            if self.verbose:
-                print('Shape of input array is 3-D or higher, so conditional mutual information '
-                      'will be computed.')
-        
+            if self.conditional:
+                if self.split:
+                    raise NotImplementedError("Both conditional and a split were indicated, but conditional MI "\
+                                              "between multidimensional variables is not implemented yet. "\
+                                              "Feel free to open an issue here if you need it: "\
+                                              "\https://github.com/dpiras/GMM-MI/issues.")
+                if self.verbose:
+                    print('Shape of input array is 3-D or higher and conditional=True, so conditional  '
+                          'mutual information will be computed. Any split will be ignored.')
+            else:
+                if self.split:
+                    if self.verbose:
+                        print('Shape of input array is 3-D or higher and a split was indicated, so '
+                              'mutual information between multivariate variables will be computed.')   
+                else:
+                     raise ValueError(f"Shape of input array is 3-D or higher, but nor conditional nor a split was indicated. "\
+                     f"Please indicate one of the two to proceed with the fit, or include a Y array to infer the split value.")
+                    
         if self.verbose:
             if not self.fixed_components:
                 print('Starting cross-validation procedure to select the number of GMM components...')
@@ -593,11 +620,13 @@ class EstimateMI:
         self.KL_mean, self.KL_std = self._set_units(self.KL_mean, self.KL_std, base)
         return MI_mean, MI_std    
      
-    def fit_estimate(self, X, Y=None, mi_dist_params=None, include_kl=False, kl_order='forward', base=np.exp(1), verbose=False):
+    def fit_estimate(self, X, Y=None, conditional=False, split=None,
+                     mi_dist_params=None, include_kl=False, kl_order='forward', 
+                     base=np.exp(1), verbose=False):
         """Combine the `fit` and `estimate` methods for easier calculation of MI. 
         See the respective methods for all information.
         """ 
-        self.fit(X=X, Y=Y, verbose=verbose)
+        self.fit(X=X, Y=Y, conditional=conditional, split=split, verbose=verbose)
         MI_mean, MI_std = self.estimate(mi_dist_params=mi_dist_params, include_kl=include_kl, 
                                        kl_order=kl_order, base=base, verbose=verbose)
         return MI_mean, MI_std            
