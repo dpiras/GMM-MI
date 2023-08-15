@@ -251,6 +251,7 @@ class EstimateMI:
             Number of GMM components being fitted. 
         """    
         if self.metric - self.best_metric > self.threshold_components:
+            self.patience_counter = 0 # reset patience counter
             self.best_metric = self.metric
             if self.verbose:
                 print(f'Current number of GMM components: {n_components}. Current metric: {self.best_metric:.3f}. Adding one component...')
