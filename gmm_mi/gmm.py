@@ -384,9 +384,8 @@ class GMMWithMI(GMM):
         return MI
 
     def estimate_MI_MC_highdim(self, split, MC_samples=1e5):
-        """Compute the conditional mutual information (cMI) associated with a particular GMM model, 
-        using MC integration. The order of variables matters: we compute MI(X, Y | Z_1, ..., z_n), 
-        where the Zs are the conditional variables.
+        """Compute the mutual information among multidimensional variables associated with a particular GMM model, 
+        using MC integration. 
         
         Parameters
         ----------
