@@ -380,9 +380,9 @@ class EstimateMI:
                 X_bs = rng.choice(self.X, self.X.shape[0])
             else:
                 X_bs = self.X
-            gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
-                             threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
-                             random_state=random_state, w_init=w_init, m_init=m_init, p_init=p_init)
+                gmm = single_fit(X=X_bs, n_components=n_components, reg_covar=self.reg_covar, 
+                         threshold_fit=self.threshold_fit, max_iter=self.max_iter, 
+                         random_state=random_state, w_init=w_init, m_init=m_init, p_init=p_init)
             current_MI_estimate = self._calculate_MI(gmm)
             MI_estimates[n_b] = current_MI_estimate
             if include_kl:
@@ -714,7 +714,7 @@ class EstimateMI:
     def _calculate_MI_categorical(self):
         """Calculate mutual information (MI) integral given a Gaussian mixture model in 2D.
         Use only Monte Carlo (MC) method. 
-        The complete formula can be found in Appendix B of Piras et al. (2022).
+        The complete formula can be found in Appendix B of Piras et al. (2023).
 
         Returns
         -------
