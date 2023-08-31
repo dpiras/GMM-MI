@@ -470,12 +470,16 @@ class EstimateMI:
                                               "\https://github.com/dpiras/GMM-MI/issues.")
                 if self.verbose:
                     print('Shape of input array is 3-D or higher and conditional=True, so conditional  '
-                          'mutual information will be computed. Any split will be ignored.')
+                          'mutual information will be computed. Any split will be ignored.'
+                          'Warning: this feature is experimental and has not been thoroughly tested; '
+                          'make sure the data distribution is captured properly.')
             else:
                 if self.split:
                     if self.verbose:
                         print('Shape of input array is 3-D or higher and a split was indicated, so '
-                              'mutual information between multivariate variables will be computed.')   
+                              'mutual information between multivariate variables will be computed.'
+                              'Warning: this feature is experimental and has not been thoroughly tested; '
+                              'make sure the data distribution is captured properly.')   
                 else:
                      raise ValueError(f"Shape of input array is 3-D or higher, but nor conditional nor a split was indicated. "\
                      f"Please indicate one of the two to proceed with the fit, or include a Y array to infer the split value.")
