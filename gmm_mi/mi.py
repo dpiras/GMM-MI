@@ -115,6 +115,10 @@ class EstimateMI:
         except:
             pass
     
+    # this is only to make the class pickable, to save/load MI estimator
+    def __getstate__(self): return self.__dict__
+    def __setstate__(self, d): self.__dict__.update(d)
+    
     def _check_shapes(self, X, Y):
         """ Check that the shapes of the arrays given as input to GMM-MI are 2D, 1D,
         or with the correct conditional structure. Return the correct array to give as input.
