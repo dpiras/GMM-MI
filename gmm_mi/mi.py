@@ -114,7 +114,7 @@ class EstimateMI:
             return getattr(self.mi_dist_params, attr)
         except:
             pass
-    
+  
     # this is only to make the class pickable, to save/load MI estimator
     def __getstate__(self): return self.__dict__
     def __setstate__(self, d): self.__dict__.update(d)
@@ -152,6 +152,8 @@ class EstimateMI:
                 return X
         # if Y is not None, we can manipulate it    
         else:
+            if X.shape[0] != Y.shape[0]:
+                raise ValueError(f"X and Y have different numbers of samples. Found {X.shape[0]} and {Y.shape[0]}.")
             if len(Y.shape) == 1:
                 Y = np.reshape(Y, (Y.shape[0], 1)) # add extra dimension
             if not self.split:
