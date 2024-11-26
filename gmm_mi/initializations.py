@@ -206,7 +206,6 @@ def initialize_parameters(X, random_state=None, n_components=1, init_type='rando
         If scale is not given, it will be set such that the volume of all components completely fills the space covered by data.
     reg_covar : float, default=0
         Constant regularisation term added to the diagonal of each covariance matrix, to avoid singular matrices.
-        In GMM-MI, the regularisation term is added during training only, and not in the initializations.
         
     Returns
     ----------

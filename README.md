@@ -44,7 +44,7 @@ Once you installed GMM-MI, calculating the distribution of mutual information on
     mi_estimator = EstimateMI()
     MI_mean, MI_std = mi_estimator.fit_estimate(X)
 
-This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. There are many things that you can do: for example, you can also pass two 1D arrays instead of a single 2D array, and even calculate the KL divergence between the marginals (as shown in the walkthrough notebook). If you want to visualize the fitted model over your input data, you can run:
+This yields (0.21 &pm; 0.04) nat, well in agreement with the theoretical value of 0.22 nat. There are many things that you can do: for example, you can also pass two 1D arrays instead of a single 2D array, and even calculate the KL divergence between the marginals. With the same syntax, you can now also compute MI between multivariate variables, as we show in the walkthrough notebook. If you want to visualize the fitted model over your input data, you can run:
     
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(1, 1, figsize=(10, 10))

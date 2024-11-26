@@ -71,7 +71,8 @@ class CrossValidation:
             w_init, m_init, c_init, p_init = initialize_parameters(X, random_state=random_state, 
                                                                    n_components=self.n_components, 
                                                                    init_type=self.init_type,
-                                                                   scale=self.scale)       
+                                                                   scale=self.scale,
+                                                                   reg_covar=self.reg_covar)       
             # perform k-fold CV
             for k_id, (train_indices, valid_indices) in enumerate(self.kf.split(X)):
                 X_training = X[train_indices]
