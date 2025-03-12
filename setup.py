@@ -30,6 +30,7 @@ setup(
                       'matplotlib>=3.1.2',
                       'numpy>=1.17.4',
                       'scikit-learn>=1.0.2',
-                      'scipy>=1.7.1']
+                      'scipy>=1.7.1',
+                      'chainconsumer<=0.34.0']
                       )
 
