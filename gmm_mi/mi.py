@@ -101,7 +101,7 @@ class EstimateMI:
         self.results_dict = {}    
     
     def __getattr__(self, attr):
-        """ Access all hyperparameter classes methods and attributes."""
+        """Access all hyperparameter classes methods and attributes."""
         try:
             return getattr(self.gmm_fit_params, attr)
         except:
@@ -120,7 +120,7 @@ class EstimateMI:
     def __setstate__(self, d): self.__dict__.update(d)
 
     def save(self, filename):
-        """ Save class instance using pickle. """
+        """Save class instance using pickle. """
         import pickle
         if filename[-4:] != '.pkl':
             filename += '.pkl'
@@ -128,7 +128,7 @@ class EstimateMI:
             pickle.dump(self, f)
 
     def load(self, filename):
-        """ Load class instance using pickle. """
+        """Load class instance using pickle. """
         import pickle
         if filename[-4:] != '.pkl':
             filename += '.pkl'
@@ -138,7 +138,7 @@ class EstimateMI:
         self.__dict__.update(loaded_instance.__dict__)
 
     def _check_shapes(self, X, Y):
-        """ Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
+        """Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
         and return the correct array to give as input.
 
         Parameters
@@ -411,7 +411,7 @@ class EstimateMI:
         return MI_mean, MI_std
     
     def _set_units(self, MI_mean, MI_std, base):
-        """ Set units according to input base.
+        """Set units according to input base.
         
         Parameters
         ----------
@@ -735,7 +735,7 @@ class EstimateMI:
             Mean of the MI distribution.
         MI_std : float
             Standard deviation of the MI distribution. None if bootstrap==False.
-        """  
+    """  
         if self.n_bootstrap < 1:
             do_bootstrap = False
             self.n_bootstrap = 1 # we will use only one dataset, i.e. all data
