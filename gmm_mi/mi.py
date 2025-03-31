@@ -735,7 +735,7 @@ class EstimateMI:
             Mean of the MI distribution.
         MI_std : float
             Standard deviation of the MI distribution. None if bootstrap==False.
-    """  
+        """  
         if self.n_bootstrap < 1:
             do_bootstrap = False
             self.n_bootstrap = 1 # we will use only one dataset, i.e. all data
