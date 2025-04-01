@@ -114,9 +114,31 @@ class EstimateMI:
             return getattr(self.mi_dist_params, attr)
         except:
             pass
-    
+
+    # this is only to make the class pickable, to save/load MI estimator
+    def __getstate__(self): return self.__dict__
+    def __setstate__(self, d): self.__dict__.update(d)
+
+    def save(self, filename):
+        """Save class instance using pickle. """
+        import pickle
+        if filename[-4:] != '.pkl':
+            filename += '.pkl'
+        with open(filename, 'wb') as f:
+            pickle.dump(self, f)
+
+    def load(self, filename):
+        """Load class instance using pickle. """
+        import pickle
+        if filename[-4:] != '.pkl':
+            filename += '.pkl'
+        with open(filename, 'rb') as f:
+            loaded_instance = pickle.load(f)
+        # restore elements of the class
+        self.__dict__.update(loaded_instance.__dict__)
+
     def _check_shapes(self, X, Y):
-        """ Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
+        """Check that the shapes of the arrays given as input to GMM-MI are either 2D or 1D,
         and return the correct array to give as input.
 
         Parameters
@@ -389,7 +411,7 @@ class EstimateMI:
         return MI_mean, MI_std
     
     def _set_units(self, MI_mean, MI_std, base):
-        """ Set units according to input base.
+        """Set units according to input base.
         
         Parameters
         ----------
